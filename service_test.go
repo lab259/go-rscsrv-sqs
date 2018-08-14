@@ -1,15 +1,15 @@
 package sqssrv
 
 import (
-	"log"
-	"testing"
+	"context"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/jamillosantos/macchiato"
 	"github.com/lab259/http"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/aws/aws-sdk-go/service/sqs"
-	"github.com/aws/aws-sdk-go/aws"
-	"context"
+	"log"
+	"testing"
 	"time"
 )
 
@@ -232,7 +232,7 @@ var _ = Describe("SQSService", func() {
 				})
 				Expect(err).To(BeNil())
 			}
-			time.Sleep(time.Millisecond*100)
+			time.Sleep(time.Millisecond * 100)
 		})
 
 		AfterEach(func() {
@@ -252,7 +252,6 @@ var _ = Describe("SQSService", func() {
 			Expect(aws.StringValue(sendOut.MessageId)).To(Equal(aws.StringValue(rcvOut.Messages[0].MessageId)))
 			Expect(aws.StringValue(rcvOut.Messages[0].Body)).To(Equal("testing this body"))
 		})
-
 
 		It("should send and receive a message with context", func() {
 			sendOut, err := sqsService.SendMessageWithContext(context.Background(), &sqs.SendMessageInput{
@@ -331,7 +330,7 @@ var _ = Describe("SQSService", func() {
 			})
 			Expect(err).To(BeNil())
 			Expect(rcvOut.Messages).To(HaveLen(2))
-			Expect([]string{aws.StringValue(rcvOut.Messages[0].MessageId),aws.StringValue(rcvOut.Messages[1].MessageId)}).To(ConsistOf(aws.StringValue(sendOut.Successful[1].MessageId), aws.StringValue(sendOut.Successful[0].MessageId)))
+			Expect([]string{aws.StringValue(rcvOut.Messages[0].MessageId), aws.StringValue(rcvOut.Messages[1].MessageId)}).To(ConsistOf(aws.StringValue(sendOut.Successful[1].MessageId), aws.StringValue(sendOut.Successful[0].MessageId)))
 		})
 
 		It("should send a message batch with context", func() {
@@ -355,7 +354,7 @@ var _ = Describe("SQSService", func() {
 			})
 			Expect(err).To(BeNil())
 			Expect(rcvOut.Messages).To(HaveLen(2))
-			Expect([]string{aws.StringValue(rcvOut.Messages[0].MessageId),aws.StringValue(rcvOut.Messages[1].MessageId)}).To(ConsistOf(aws.StringValue(sendOut.Successful[1].MessageId), aws.StringValue(sendOut.Successful[0].MessageId)))
+			Expect([]string{aws.StringValue(rcvOut.Messages[0].MessageId), aws.StringValue(rcvOut.Messages[1].MessageId)}).To(ConsistOf(aws.StringValue(sendOut.Successful[1].MessageId), aws.StringValue(sendOut.Successful[0].MessageId)))
 		})
 
 		It("should delete a message in batch", func() {
@@ -379,7 +378,7 @@ var _ = Describe("SQSService", func() {
 			})
 			Expect(err).To(BeNil())
 			Expect(rcvOut.Messages).To(HaveLen(2))
-			Expect([]string{aws.StringValue(rcvOut.Messages[0].MessageId),aws.StringValue(rcvOut.Messages[1].MessageId)}).To(ConsistOf(aws.StringValue(sendOut.Successful[1].MessageId), aws.StringValue(sendOut.Successful[0].MessageId)))
+			Expect([]string{aws.StringValue(rcvOut.Messages[0].MessageId), aws.StringValue(rcvOut.Messages[1].MessageId)}).To(ConsistOf(aws.StringValue(sendOut.Successful[1].MessageId), aws.StringValue(sendOut.Successful[0].MessageId)))
 
 			sqsService.DeleteMessageBatch(&sqs.DeleteMessageBatchInput{
 				Entries: []*sqs.DeleteMessageBatchRequestEntry{
@@ -421,7 +420,7 @@ var _ = Describe("SQSService", func() {
 			})
 			Expect(err).To(BeNil())
 			Expect(rcvOut.Messages).To(HaveLen(2))
-			Expect([]string{aws.StringValue(rcvOut.Messages[0].MessageId),aws.StringValue(rcvOut.Messages[1].MessageId)}).To(ConsistOf(aws.StringValue(sendOut.Successful[1].MessageId), aws.StringValue(sendOut.Successful[0].MessageId)))
+			Expect([]string{aws.StringValue(rcvOut.Messages[0].MessageId), aws.StringValue(rcvOut.Messages[1].MessageId)}).To(ConsistOf(aws.StringValue(sendOut.Successful[1].MessageId), aws.StringValue(sendOut.Successful[0].MessageId)))
 
 			sqsService.DeleteMessageBatchWithContext(context.Background(), &sqs.DeleteMessageBatchInput{
 				Entries: []*sqs.DeleteMessageBatchRequestEntry{

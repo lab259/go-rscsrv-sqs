@@ -1,14 +1,14 @@
 package sqssrv
 
 import (
+	"context"
 	"errors"
-	"github.com/lab259/http"
-	"github.com/gomodule/redigo/redis"
-	"github.com/aws/aws-sdk-go/service/sqs"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
-	"context"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/gomodule/redigo/redis"
+	"github.com/lab259/http"
 )
 
 // RedigoServiceConfiguration is the configuration for the `RedigoService`

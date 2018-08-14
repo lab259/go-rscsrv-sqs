@@ -27,6 +27,9 @@ coverage: coverage-ci
 coverage-html:
 	@$(GOPATHCMD) go tool cover -html="${COVERAGEFILE}" -o .cover/report.html
 
+fmt:
+	@$(GOPATHCMD) go fmt
+
 deps:
 	@mkdir -p ${GOPATH}
 	@go list -f '{{join .Deps "\n"}}' . | xargs go list -f '{{if not .Standard}}{{.ImportPath}}{{end}}' | GOPATH=${GOPATH} xargs go get -v -t
