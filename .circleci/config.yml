@@ -16,9 +16,15 @@ jobs:
           environment:
             DOCKERIZE_VERSION: v0.3.0
 
+
       - run:
-          name: Wait for Redis
-          command: dockerize -wait tcp://localhost:6379 -timeout 10s
+          name: Wait for Localstack
+          command: until wget -O- http://localhost:4576/\?Action\=ListQueues >/dev/null 2>&1; do echo "Localstack is unreachable - sleeping"; sleep  1; done
+
+      - run:
+          name: Create SQS queues
+          command: |
+            wget -qO- http://localhost:4576\?Action\=CreateQueue\&QueueName\=queue-test
 
       - run: go get -u github.com/onsi/ginkgo/ginkgo
       - run: make deps-ci
