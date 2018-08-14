@@ -355,8 +355,7 @@ var _ = Describe("SQSService", func() {
 			})
 			Expect(err).To(BeNil())
 			Expect(rcvOut.Messages).To(HaveLen(2))
-			Expect(rcvOut.Messages[0].MessageId).To(Equal(sendOut.Successful[1].MessageId))
-			Expect(rcvOut.Messages[1].MessageId).To(Equal(sendOut.Successful[0].MessageId))
+			Expect([]string{aws.StringValue(rcvOut.Messages[0].MessageId),aws.StringValue(rcvOut.Messages[1].MessageId)}).To(ConsistOf(aws.StringValue(sendOut.Successful[1].MessageId), aws.StringValue(sendOut.Successful[0].MessageId)))
 		})
 
 		It("should delete a message in batch", func() {
@@ -380,8 +379,7 @@ var _ = Describe("SQSService", func() {
 			})
 			Expect(err).To(BeNil())
 			Expect(rcvOut.Messages).To(HaveLen(2))
-			Expect(rcvOut.Messages[0].MessageId).To(Equal(sendOut.Successful[1].MessageId))
-			Expect(rcvOut.Messages[1].MessageId).To(Equal(sendOut.Successful[0].MessageId))
+			Expect([]string{aws.StringValue(rcvOut.Messages[0].MessageId),aws.StringValue(rcvOut.Messages[1].MessageId)}).To(ConsistOf(aws.StringValue(sendOut.Successful[1].MessageId), aws.StringValue(sendOut.Successful[0].MessageId)))
 
 			sqsService.DeleteMessageBatch(&sqs.DeleteMessageBatchInput{
 				Entries: []*sqs.DeleteMessageBatchRequestEntry{
@@ -393,8 +391,6 @@ var _ = Describe("SQSService", func() {
 					},
 				},
 			})
-
-			time.Sleep(time.Millisecond*500)
 
 			rcvOut, err = sqsService.ReceiveMessage(&sqs.ReceiveMessageInput{
 				WaitTimeSeconds:     aws.Int64(1),
@@ -425,8 +421,7 @@ var _ = Describe("SQSService", func() {
 			})
 			Expect(err).To(BeNil())
 			Expect(rcvOut.Messages).To(HaveLen(2))
-			Expect(rcvOut.Messages[0].MessageId).To(Equal(sendOut.Successful[1].MessageId))
-			Expect(rcvOut.Messages[1].MessageId).To(Equal(sendOut.Successful[0].MessageId))
+			Expect([]string{aws.StringValue(rcvOut.Messages[0].MessageId),aws.StringValue(rcvOut.Messages[1].MessageId)}).To(ConsistOf(aws.StringValue(sendOut.Successful[1].MessageId), aws.StringValue(sendOut.Successful[0].MessageId)))
 
 			sqsService.DeleteMessageBatchWithContext(context.Background(), &sqs.DeleteMessageBatchInput{
 				Entries: []*sqs.DeleteMessageBatchRequestEntry{
