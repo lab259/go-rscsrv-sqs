@@ -1,6 +1,4 @@
-[![CircleCI](https://circleci.com/gh/lab259/http-sqs-service.svg?style=shield)](https://circleci.com/gh/lab259/http-sqs-service) [![codecov](https://codecov.io/gh/lab259/http-sqs-service/branch/master/graph/badge.svg)](https://codecov.io/gh/lab259/http-sqs-service)
-
-# http-sqs-service
+# http-sqs-service [![CircleCI](https://circleci.com/gh/lab259/http-sqs-service.svg?style=shield)](https://circleci.com/gh/lab259/http-sqs-service) [![codecov](https://codecov.io/gh/lab259/http-sqs-service/branch/master/graph/badge.svg)](https://codecov.io/gh/lab259/http-sqs-service)
 
 The http-sqs-service is the [lab259/http](//github.com/lab259/http) service for
 the Amazon Simple Queue Service (SQS).
