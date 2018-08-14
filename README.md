@@ -59,7 +59,7 @@ func (service *MessageSQSService) LoadConfiguration() (interface{}, error) {
 ```
 
 **example.go**
-```
+```Go
 // ...
 
 var mq rscsrsv.MessageSQSService

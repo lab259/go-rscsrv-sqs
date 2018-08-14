@@ -6,7 +6,7 @@ jobs:
 
     - image: localstack/localstack
 
-    working_directory: /go/src/github.com/lab259/http-redigo-service
+    working_directory: /go/src/github.com/lab259/http-sqs-service
     steps:
       - checkout
 

@@ -16,7 +16,7 @@ import (
 func TestService(t *testing.T) {
 	log.SetOutput(GinkgoWriter)
 	RegisterFailHandler(Fail)
-	macchiato.RunSpecs(t, "Redigo Test Suite")
+	macchiato.RunSpecs(t, "SQS Service Test Suite")
 }
 
 var _ = Describe("SQSService", func() {

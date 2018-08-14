@@ -7,7 +7,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
-	"github.com/gomodule/redigo/redis"
 	"github.com/lab259/http"
 )
 
@@ -43,7 +42,6 @@ func (*CredentialsFromStruct) IsExpired() bool {
 
 // SQSService is the service which manages a service queue on the AWS.
 type SQSService struct {
-	redis.Args
 	running       bool
 	awsSQS        *sqs.SQS
 	Configuration SQSServiceConfiguration
