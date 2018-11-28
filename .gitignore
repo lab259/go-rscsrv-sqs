@@ -13,7 +13,8 @@
 
 .idea/
 .vscode/
-.gopath/
 .cover/
+.docker/
+vendor/
 
 *.coverprofile

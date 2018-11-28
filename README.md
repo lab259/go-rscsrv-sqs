@@ -92,3 +92,12 @@ func enqueueMessage(message string) {
 
 // ...
 ```
+
+## Development
+
+```bash
+mkdir -p src/github.com/lab259/http-sqs-service
+git clone git@github.com:lab259/http-sqs-service.git src/github.com/lab259/http-sqs-service
+cd src/github.com/lab259/http-sqs-service
+make dep-ensure
+```

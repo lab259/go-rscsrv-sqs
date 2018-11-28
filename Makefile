@@ -30,10 +30,8 @@ coverage-html:
 fmt:
 	@$(GOPATHCMD) go fmt
 
-deps:
-	@mkdir -p ${GOPATH}
-	@go list -f '{{join .Deps "\n"}}' . | xargs go list -f '{{if not .Standard}}{{.ImportPath}}{{end}}' | GOPATH=${GOPATH} xargs go get -v -t
-	@go list -f '{{join .TestImports "\n"}}' . | xargs go list -f '{{if not .Standard}}{{.ImportPath}}{{end}}' | GOPATH=${GOPATH} xargs go get -v -t
+dep-ensure:
+	@$(GOPATHCMD) dep ensure -v
 
 deps-ci:
 	-go get -v -t ./...
