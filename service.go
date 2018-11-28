@@ -3,11 +3,14 @@ package sqssrv
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/lab259/http"
+	"net/url"
+	"path"
 )
 
 // RedigoServiceConfiguration is the configuration for the `RedigoService`
@@ -100,6 +103,30 @@ func (service *SQSService) Start() error {
 			return err
 		}
 		service.awsSQS = sqs.New(sess)
+
+		qurl, err := url.Parse(service.Configuration.QUrl)
+		if err != nil {
+			return fmt.Errorf("could not parse QUrl: %s", err.Error())
+		}
+
+		listQueuesOutput, err := service.awsSQS.ListQueues(&sqs.ListQueuesInput{
+			QueueNamePrefix: aws.String(path.Base(qurl.Path)),
+		})
+		if err != nil {
+			return err
+		}
+		err = func() error {
+			for _, q := range listQueuesOutput.QueueUrls {
+				if aws.StringValue(q) == service.Configuration.QUrl {
+					return nil
+				}
+			}
+			return fmt.Errorf("queue %s not found", service.Configuration.QUrl)
+		}()
+		if err != nil {
+			return err
+		}
+
 		service.running = true
 	}
 	return nil

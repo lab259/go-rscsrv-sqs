@@ -87,6 +87,18 @@ var _ = Describe("SQSService", func() {
 		Expect(aws.StringValue(output.MessageId)).NotTo(BeEmpty())
 	})
 
+	It("should start the service with a non existing queue", func() {
+		var service SQSService
+		v := validConfiguration
+		v.QUrl += "-nonexistent"
+		Expect(service.ApplyConfiguration(&v)).To(BeNil())
+		err := service.Start()
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("queue"))
+		Expect(err.Error()).To(ContainSubstring("not found"))
+
+	})
+
 	It("should stop the service", func() {
 		var service SQSService
 		Expect(service.ApplyConfiguration(&validConfiguration)).To(BeNil())
