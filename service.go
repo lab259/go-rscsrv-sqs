@@ -104,20 +104,24 @@ func (service *SQSService) Start() error {
 		}
 		service.awsSQS = sqs.New(sess)
 
-		qurl, err := url.Parse(service.Configuration.QUrl)
+		confQURLParsed, err := url.Parse(service.Configuration.QUrl)
 		if err != nil {
-			return fmt.Errorf("could not parse QUrl: %s", err.Error())
+			return fmt.Errorf("could not parse the qurl: %s (%s)", service.Configuration.QUrl, err.Error())
 		}
 
 		listQueuesOutput, err := service.awsSQS.ListQueues(&sqs.ListQueuesInput{
-			QueueNamePrefix: aws.String(path.Base(qurl.Path)),
+			QueueNamePrefix: aws.String(path.Base(confQURLParsed.Path)),
 		})
 		if err != nil {
 			return err
 		}
 		err = func() error {
 			for _, q := range listQueuesOutput.QueueUrls {
-				if aws.StringValue(q) == service.Configuration.QUrl {
+				qURLParsed, err := url.Parse(aws.StringValue(q))
+				if err != nil {
+					return fmt.Errorf("could not parse the qurl: %s (%s)", aws.StringValue(q), err.Error())
+				}
+				if path.Base(qURLParsed.Path) == path.Base(confQURLParsed.Path) {
 					return nil
 				}
 			}

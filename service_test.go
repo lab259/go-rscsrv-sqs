@@ -87,7 +87,21 @@ var _ = Describe("SQSService", func() {
 		Expect(aws.StringValue(output.MessageId)).NotTo(BeEmpty())
 	})
 
-	It("should start the service with a non existing queue", func() {
+	It("should start the service with a different host", func() {
+		var service SQSService
+		v := validConfiguration
+		v.QUrl = "http://differenthost:4576/queue/queue-test"
+		Expect(service.ApplyConfiguration(&v)).To(BeNil())
+		Expect(service.Start()).To(BeNil())
+		defer service.Stop()
+		output, err := service.SendMessage(&sqs.SendMessageInput{
+			MessageBody: aws.String("this is the body of the message"),
+		})
+		Expect(err).To(BeNil())
+		Expect(aws.StringValue(output.MessageId)).NotTo(BeEmpty())
+	})
+
+	It("should fail starting the service with a non existing queue", func() {
 		var service SQSService
 		v := validConfiguration
 		v.QUrl += "-nonexistent"
@@ -96,7 +110,6 @@ var _ = Describe("SQSService", func() {
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("queue"))
 		Expect(err.Error()).To(ContainSubstring("not found"))
-
 	})
 
 	It("should stop the service", func() {
