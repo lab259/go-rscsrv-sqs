@@ -1,5 +1,5 @@
 
-GOPATH=$(CURDIR)/.gopath
+GOPATH=$(CURDIR)/../../../../
 GOPATHCMD=GOPATH=$(GOPATH)
 
 COVERDIR=$(CURDIR)/.cover

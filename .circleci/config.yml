@@ -36,4 +36,5 @@ jobs:
           command: make dep-ensure
 
       - run: make coverage-ci
+
       - run: bash <(curl -s https://codecov.io/bash)
