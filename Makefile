@@ -27,9 +27,9 @@ vet:
 
 dcup:
 	@docker-compose up -d
-	@until wget -O- http://localhost:4576/\?Action\=ListQueues >/dev/null 2>&1; do echo "Localstack is unreachable - sleeping"; sleep  1; done
+	@until wget -O- http://localhost:9324/\?Action\=ListQueues >/dev/null 2>&1; do echo "ElasticMQ is unreachable - sleeping"; sleep  1; done
 	@echo "Creating SQS queues..."
-	wget -qO- http://localhost:4576\?Action\=CreateQueue\&QueueName\=queue-test
+	wget -qO- http://localhost:9324\?Action\=CreateQueue\&QueueName\=queue-test
 
 dcdn:
 	@docker-compose down

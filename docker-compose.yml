@@ -1,9 +1,9 @@
 version: "3"
 
 services:
-  localstack:
-    image: localstack/localstack
+  elasticmq:
+    image: papejajr/elasticmq
     ports:
-      - "4576:4576"
+      - "9324:9324"
     environment:
       SERVICES: sqs

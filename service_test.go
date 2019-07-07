@@ -72,8 +72,8 @@ var _ = Describe("SQSService", func() {
 	})
 
 	validConfiguration := SQSServiceConfiguration{
-		Endpoint: "http://localhost:4576",
-		QUrl:     "http://localhost:4576/queue/queue-test",
+		Endpoint: "http://localhost:9324",
+		QUrl:     "http://localhost:9324/queue/queue-test",
 	}
 
 	It("should start the service", func() {
@@ -91,7 +91,7 @@ var _ = Describe("SQSService", func() {
 	It("should start the service with a different host", func() {
 		var service SQSService
 		v := validConfiguration
-		v.QUrl = "http://differenthost:4576/queue/queue-test"
+		v.QUrl = "http://differenthost:9324/queue/queue-test"
 		Expect(service.ApplyConfiguration(&v)).To(BeNil())
 		Expect(service.Start()).To(BeNil())
 		defer service.Stop()

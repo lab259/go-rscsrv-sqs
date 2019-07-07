@@ -1,39 +1,25 @@
 version: 2
+
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.9
+      - image: circleci/golang:1.12
+      - image: papejajr/elasticmq
 
-      - image: localstack/localstack
-
-    working_directory: /go/src/github.com/lab259/http-sqs-service
     steps:
       - checkout
 
       - run:
-          name: Install dockerize
-          command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
-          environment:
-            DOCKERIZE_VERSION: v0.3.0
-
-      - run:
-          name: Wait for Localstack
-          command: until wget -O- http://localhost:4576/\?Action\=ListQueues >/dev/null 2>&1; do echo "Localstack is unreachable - sleeping"; sleep  1; done
+          name: Wait for ElasticMQ
+          command: until wget -O- http://localhost:9324/\?Action\=ListQueues >/dev/null 2>&1; do echo "ElasticMQ is unreachable - sleeping"; sleep  1; done
 
       - run:
           name: Create SQS queues
-          command: |
-            wget -qO- http://localhost:4576\?Action\=CreateQueue\&QueueName\=queue-test
+          command: wget -qO- http://localhost:9324\?Action\=CreateQueue\&QueueName\=queue-test
 
-      - run: go get -u github.com/onsi/ginkgo/ginkgo
+      - run: go get github.com/onsi/ginkgo/ginkgo
 
-      - run:
-          name: Install dep
-          command: curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-
-      - run:
-          name: Get dependencies
-          command: make dep-ensure
+      - run: go mod download
 
       - run: make coverage-ci
 
