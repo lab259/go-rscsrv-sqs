@@ -1,11 +1,11 @@
-[![CircleCI](https://circleci.com/gh/lab259/http-sqs-service.svg?style=shield)](https://circleci.com/gh/lab259/http-sqs-service)
-[![codecov](https://codecov.io/gh/lab259/http-sqs-service/branch/master/graph/badge.svg)](https://codecov.io/gh/lab259/http-sqs-service)
-[![GoDoc](https://godoc.org/github.com/lab259/http-sqs-service?status.svg)](http://godoc.org/github.com/lab259/http-sqs-service)
-[![Go Report Card](https://goreportcard.com/badge/github.com/lab259/http-sqs-service)](https://goreportcard.com/report/github.com/lab259/http-sqs-service)
+[![CircleCI](https://circleci.com/gh/lab259/go-rscsrv-sqs.svg?style=shield)](https://circleci.com/gh/lab259/go-rscsrv-sqs)
+[![codecov](https://codecov.io/gh/lab259/go-rscsrv-sqs/branch/master/graph/badge.svg)](https://codecov.io/gh/lab259/go-rscsrv-sqs)
+[![GoDoc](https://godoc.org/github.com/lab259/go-rscsrv-sqs?status.svg)](http://godoc.org/github.com/lab259/go-rscsrv-sqs)
+[![Go Report Card](https://goreportcard.com/badge/github.com/lab259/go-rscsrv-sqs)](https://goreportcard.com/report/github.com/lab259/go-rscsrv-sqs)
 
-# http-sqs-service
+# go-rscsrv-sqs
 
-The http-sqs-service is the [lab259/http](//github.com/lab259/http) service for
+The go-rscsrv-sqs is the [lab259/http](//github.com/lab259/http) service for
 the Amazon Simple Queue Service (SQS).
 
 It wraps the logic of dealing with credentials and keeping the session.
@@ -19,7 +19,7 @@ of course) itself and the [aws/aws-sdk-go](//github.com/aws/aws-sdk-go) library.
 
 First, fetch the library to the repository.
 
-	go get github.com/lab259/http-sqs-service
+    go get github.com/lab259/go-rscsrv-sqs
 
 ## Usage
 
@@ -32,7 +32,7 @@ package mail
 
 import (
 	"github.com/lab259/http"
-	"github.com/lab259/http-sqs-service"
+	"github.com/lab259/go-rscsrv-sqs"
 )
 
 type MessageSQSService struct {
@@ -59,6 +59,7 @@ func (service *MessageSQSService) LoadConfiguration() (interface{}, error) {
 ```
 
 **example.go**
+
 ```Go
 // ...
 
@@ -96,8 +97,9 @@ func enqueueMessage(message string) {
 ## Development
 
 ```bash
-mkdir -p src/github.com/lab259/http-sqs-service
-git clone git@github.com:lab259/http-sqs-service.git src/github.com/lab259/http-sqs-service
-cd src/github.com/lab259/http-sqs-service
-make dep-ensure
+git clone git@github.com:lab259/go-rscsrv-sqs.git
+cd go-rscsrv-sqs
+make dcup
+go mod download
+make test
 ```
