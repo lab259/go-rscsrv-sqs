@@ -5,14 +5,14 @@
 
 # go-rscsrv-sqs
 
-The go-rscsrv-sqs is the [lab259/http](//github.com/lab259/http) service for
+The go-rscsrv-sqs is the [lab259/go-rscsrv](//github.com/lab259/go-rscsrv) service for
 the Amazon Simple Queue Service (SQS).
 
 It wraps the logic of dealing with credentials and keeping the session.
 
 ## Dependencies
 
-It depends on the [lab259/http](//github.com/lab259/http) (and its dependencies,
+It depends on the [lab259/go-rscsrv](//github.com/lab259/go-rscsrv) (and its dependencies,
 of course) itself and the [aws/aws-sdk-go](//github.com/aws/aws-sdk-go) library.
 
 ## Installation
@@ -31,7 +31,7 @@ The service is designed to be "extended" and not used directly.
 package mail
 
 import (
-	"github.com/lab259/http"
+	"github.com/lab259/go-rscsrv"
 	"github.com/lab259/go-rscsrv-sqs"
 )
 
@@ -42,8 +42,8 @@ type MessageSQSService struct {
 func (service *MessageSQSService) LoadConfiguration() (interface{}, error) {
 	var configuration sqssrv.SQSServiceConfiguration
 
-	configurationLoader := http.NewFileConfigurationLoader("/etc/mail")
-	configurationUnmarshaler := &http.ConfigurationUnmarshalerYaml{}
+	configurationLoader := rscsrv.NewFileConfigurationLoader("/etc/mail")
+	configurationUnmarshaler := &rscsrv.ConfigurationUnmarshalerYaml{}
 
 	config, err := configurationLoader.Load(file)
 	if err != nil {
@@ -97,9 +97,9 @@ func enqueueMessage(message string) {
 ## Development
 
 ```bash
-git clone git@github.com:lab259/go-rscsrv-sqs.git
-cd go-rscsrv-sqs
-make dcup
-go mod download
-make test
+git clone git@github.com:lab259/go-rscsrv-sqs.git # clone the project
+cd go-rscsrv-sqs                                  # enter the directory
+make dcup                                         # start the ElasticMQ
+go mod download                                   # download the dependencies
+make test                                         # run the tests
 ```
