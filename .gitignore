@@ -18,3 +18,4 @@
 vendor/
 
 *.coverprofile
+test-results/

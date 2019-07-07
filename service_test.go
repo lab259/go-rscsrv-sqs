@@ -3,6 +3,8 @@ package sqssrv
 import (
 	"context"
 	"log"
+	"os"
+	"path"
 	"testing"
 	"time"
 
@@ -11,13 +13,24 @@ import (
 	"github.com/jamillosantos/macchiato"
 	rscsrv "github.com/lab259/go-rscsrv"
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 )
 
 func TestService(t *testing.T) {
 	log.SetOutput(GinkgoWriter)
 	RegisterFailHandler(Fail)
-	macchiato.RunSpecs(t, "SQS Service Test Suite")
+
+	description := "SQS Service Test Suite"
+	if os.Getenv("CI") == "" {
+		macchiato.RunSpecs(t, description)
+	} else {
+		reporterOutputDir := path.Join("./test-results/go-rscsrv-sqs")
+		os.MkdirAll(reporterOutputDir, os.ModePerm)
+		junitReporter := reporters.NewJUnitReporter(path.Join(reporterOutputDir, "results.xml"))
+		macchiatoReporter := macchiato.NewReporter()
+		RunSpecsWithCustomReporters(t, description, []Reporter{macchiatoReporter, junitReporter})
+	}
 }
 
 var _ = Describe("SQSService", func() {

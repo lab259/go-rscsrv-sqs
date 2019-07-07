@@ -5,5 +5,3 @@ services:
     image: papejajr/elasticmq
     ports:
       - "9324:9324"
-    environment:
-      SERVICES: sqs

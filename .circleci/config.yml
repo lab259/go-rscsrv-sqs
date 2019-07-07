@@ -9,6 +9,12 @@ jobs:
     steps:
       - checkout
 
+      - restore_cache:
+          keys:
+            - deps-{{ .Branch }}-{{ checksum "go.sum" }}
+            - deps-{{ .Branch }}-
+            - deps-
+
       - run:
           name: Wait for ElasticMQ
           command: until wget -O- http://localhost:9324/\?Action\=ListQueues >/dev/null 2>&1; do echo "ElasticMQ is unreachable - sleeping"; sleep  1; done
@@ -24,3 +30,11 @@ jobs:
       - run: make coverage-ci
 
       - run: bash <(curl -s https://codecov.io/bash)
+
+      - save_cache:
+          key: deps-{{ .Branch }}-{{ checksum "go.sum" }}
+          paths:
+            - /go/pkg/mod
+
+      - store_test_results:
+          path: test-results
