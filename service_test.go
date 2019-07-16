@@ -2,21 +2,35 @@ package sqssrv
 
 import (
 	"context"
+	"log"
+	"os"
+	"path"
+	"testing"
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/jamillosantos/macchiato"
-	"github.com/lab259/http"
+	rscsrv "github.com/lab259/go-rscsrv"
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
-	"log"
-	"testing"
-	"time"
 )
 
 func TestService(t *testing.T) {
 	log.SetOutput(GinkgoWriter)
 	RegisterFailHandler(Fail)
-	macchiato.RunSpecs(t, "SQS Service Test Suite")
+
+	description := "SQS Service Test Suite"
+	if os.Getenv("CI") == "" {
+		macchiato.RunSpecs(t, description)
+	} else {
+		reporterOutputDir := path.Join("./test-results/go-rscsrv-sqs")
+		os.MkdirAll(reporterOutputDir, os.ModePerm)
+		junitReporter := reporters.NewJUnitReporter(path.Join(reporterOutputDir, "results.xml"))
+		macchiatoReporter := macchiato.NewReporter()
+		RunSpecsWithCustomReporters(t, description, []Reporter{macchiatoReporter, junitReporter})
+	}
 }
 
 var _ = Describe("SQSService", func() {
@@ -33,7 +47,7 @@ var _ = Describe("SQSService", func() {
 		err := service.ApplyConfiguration(map[string]interface{}{
 			"address": "localhost",
 		})
-		Expect(err).To(Equal(http.ErrWrongConfigurationInformed))
+		Expect(err).To(Equal(rscsrv.ErrWrongConfigurationInformed))
 	})
 
 	It("should apply the configuration using a pointer", func() {
@@ -71,8 +85,8 @@ var _ = Describe("SQSService", func() {
 	})
 
 	validConfiguration := SQSServiceConfiguration{
-		Endpoint: "http://localhost:4576",
-		QUrl:     "http://localhost:4576/queue/queue-test",
+		Endpoint: "http://localhost:9324",
+		QUrl:     "http://localhost:9324/queue/queue-test",
 	}
 
 	It("should start the service", func() {
@@ -90,7 +104,7 @@ var _ = Describe("SQSService", func() {
 	It("should start the service with a different host", func() {
 		var service SQSService
 		v := validConfiguration
-		v.QUrl = "http://differenthost:4576/queue/queue-test"
+		v.QUrl = "http://differenthost:9324/queue/queue-test"
 		Expect(service.ApplyConfiguration(&v)).To(BeNil())
 		Expect(service.Start()).To(BeNil())
 		defer service.Stop()
@@ -119,7 +133,7 @@ var _ = Describe("SQSService", func() {
 		Expect(service.Stop()).To(BeNil())
 		Expect(service.RunWithSQS(func(client *sqs.SQS) error {
 			return nil
-		})).To(Equal(http.ErrServiceNotRunning))
+		})).To(Equal(rscsrv.ErrServiceNotRunning))
 	})
 
 	It("should restart the service", func() {
@@ -141,14 +155,14 @@ var _ = Describe("SQSService", func() {
 			_, err := sqsService.SendMessage(&sqs.SendMessageInput{
 				MessageBody: aws.String("testing data"),
 			})
-			Expect(err).To(Equal(http.ErrServiceNotRunning))
+			Expect(err).To(Equal(rscsrv.ErrServiceNotRunning))
 		})
 
 		It("should fail sending a message with context", func() {
 			_, err := sqsService.SendMessageWithContext(context.Background(), &sqs.SendMessageInput{
 				MessageBody: aws.String("testing data"),
 			})
-			Expect(err).To(Equal(http.ErrServiceNotRunning))
+			Expect(err).To(Equal(rscsrv.ErrServiceNotRunning))
 		})
 
 		It("should fail sending a message in batch", func() {
@@ -162,7 +176,7 @@ var _ = Describe("SQSService", func() {
 					},
 				},
 			})
-			Expect(err).To(Equal(http.ErrServiceNotRunning))
+			Expect(err).To(Equal(rscsrv.ErrServiceNotRunning))
 		})
 
 		It("should fail sending a message in batch with context", func() {
@@ -176,35 +190,35 @@ var _ = Describe("SQSService", func() {
 					},
 				},
 			})
-			Expect(err).To(Equal(http.ErrServiceNotRunning))
+			Expect(err).To(Equal(rscsrv.ErrServiceNotRunning))
 		})
 
 		It("should fail receiving a message", func() {
 			_, err := sqsService.ReceiveMessage(&sqs.ReceiveMessageInput{
 				WaitTimeSeconds: aws.Int64(1),
 			})
-			Expect(err).To(Equal(http.ErrServiceNotRunning))
+			Expect(err).To(Equal(rscsrv.ErrServiceNotRunning))
 		})
 
 		It("should fail receiving a message with context", func() {
 			_, err := sqsService.ReceiveMessageWithContext(context.Background(), &sqs.ReceiveMessageInput{
 				WaitTimeSeconds: aws.Int64(1),
 			})
-			Expect(err).To(Equal(http.ErrServiceNotRunning))
+			Expect(err).To(Equal(rscsrv.ErrServiceNotRunning))
 		})
 
 		It("should fail deleting a message", func() {
 			_, err := sqsService.DeleteMessage(&sqs.DeleteMessageInput{
 				ReceiptHandle: aws.String("fake message"),
 			})
-			Expect(err).To(Equal(http.ErrServiceNotRunning))
+			Expect(err).To(Equal(rscsrv.ErrServiceNotRunning))
 		})
 
 		It("should fail deleting a message with context", func() {
 			_, err := sqsService.DeleteMessageWithContext(context.Background(), &sqs.DeleteMessageInput{
 				ReceiptHandle: aws.String("fake message"),
 			})
-			Expect(err).To(Equal(http.ErrServiceNotRunning))
+			Expect(err).To(Equal(rscsrv.ErrServiceNotRunning))
 		})
 
 		It("should fail deleting a message batch", func() {
@@ -218,7 +232,7 @@ var _ = Describe("SQSService", func() {
 					},
 				},
 			})
-			Expect(err).To(Equal(http.ErrServiceNotRunning))
+			Expect(err).To(Equal(rscsrv.ErrServiceNotRunning))
 		})
 
 		It("should fail deleting a message batch with context", func() {
@@ -232,7 +246,7 @@ var _ = Describe("SQSService", func() {
 					},
 				},
 			})
-			Expect(err).To(Equal(http.ErrServiceNotRunning))
+			Expect(err).To(Equal(rscsrv.ErrServiceNotRunning))
 		})
 	})
 

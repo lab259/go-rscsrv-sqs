@@ -1,25 +1,25 @@
-[![CircleCI](https://circleci.com/gh/lab259/http-sqs-service.svg?style=shield)](https://circleci.com/gh/lab259/http-sqs-service)
-[![codecov](https://codecov.io/gh/lab259/http-sqs-service/branch/master/graph/badge.svg)](https://codecov.io/gh/lab259/http-sqs-service)
-[![GoDoc](https://godoc.org/github.com/lab259/http-sqs-service?status.svg)](http://godoc.org/github.com/lab259/http-sqs-service)
-[![Go Report Card](https://goreportcard.com/badge/github.com/lab259/http-sqs-service)](https://goreportcard.com/report/github.com/lab259/http-sqs-service)
+[![CircleCI](https://circleci.com/gh/lab259/go-rscsrv-sqs.svg?style=shield)](https://circleci.com/gh/lab259/go-rscsrv-sqs)
+[![codecov](https://codecov.io/gh/lab259/go-rscsrv-sqs/branch/master/graph/badge.svg)](https://codecov.io/gh/lab259/go-rscsrv-sqs)
+[![GoDoc](https://godoc.org/github.com/lab259/go-rscsrv-sqs?status.svg)](http://godoc.org/github.com/lab259/go-rscsrv-sqs)
+[![Go Report Card](https://goreportcard.com/badge/github.com/lab259/go-rscsrv-sqs)](https://goreportcard.com/report/github.com/lab259/go-rscsrv-sqs)
 
-# http-sqs-service
+# go-rscsrv-sqs
 
-The http-sqs-service is the [lab259/http](//github.com/lab259/http) service for
+The go-rscsrv-sqs is the [lab259/go-rscsrv](//github.com/lab259/go-rscsrv) service for
 the Amazon Simple Queue Service (SQS).
 
 It wraps the logic of dealing with credentials and keeping the session.
 
 ## Dependencies
 
-It depends on the [lab259/http](//github.com/lab259/http) (and its dependencies,
+It depends on the [lab259/go-rscsrv](//github.com/lab259/go-rscsrv) (and its dependencies,
 of course) itself and the [aws/aws-sdk-go](//github.com/aws/aws-sdk-go) library.
 
 ## Installation
 
 First, fetch the library to the repository.
 
-	go get github.com/lab259/http-sqs-service
+    go get github.com/lab259/go-rscsrv-sqs
 
 ## Usage
 
@@ -31,8 +31,8 @@ The service is designed to be "extended" and not used directly.
 package mail
 
 import (
-	"github.com/lab259/http"
-	"github.com/lab259/http-sqs-service"
+	"github.com/lab259/go-rscsrv"
+	"github.com/lab259/go-rscsrv-sqs"
 )
 
 type MessageSQSService struct {
@@ -42,8 +42,8 @@ type MessageSQSService struct {
 func (service *MessageSQSService) LoadConfiguration() (interface{}, error) {
 	var configuration sqssrv.SQSServiceConfiguration
 
-	configurationLoader := http.NewFileConfigurationLoader("/etc/mail")
-	configurationUnmarshaler := &http.ConfigurationUnmarshalerYaml{}
+	configurationLoader := rscsrv.NewFileConfigurationLoader("/etc/mail")
+	configurationUnmarshaler := &rscsrv.ConfigurationUnmarshalerYaml{}
 
 	config, err := configurationLoader.Load(file)
 	if err != nil {
@@ -59,6 +59,7 @@ func (service *MessageSQSService) LoadConfiguration() (interface{}, error) {
 ```
 
 **example.go**
+
 ```Go
 // ...
 
@@ -96,8 +97,9 @@ func enqueueMessage(message string) {
 ## Development
 
 ```bash
-mkdir -p src/github.com/lab259/http-sqs-service
-git clone git@github.com:lab259/http-sqs-service.git src/github.com/lab259/http-sqs-service
-cd src/github.com/lab259/http-sqs-service
-make dep-ensure
+git clone git@github.com:lab259/go-rscsrv-sqs.git # clone the project
+cd go-rscsrv-sqs                                  # enter the directory
+make dcup                                         # start the ElasticMQ
+go mod download                                   # download the dependencies
+make test                                         # run the tests
 ```

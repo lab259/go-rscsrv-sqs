@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
+	"path"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
-	"github.com/lab259/http"
-	"net/url"
-	"path"
+	rscsrv "github.com/lab259/go-rscsrv"
 )
 
 // RedigoServiceConfiguration is the configuration for the `RedigoService`
@@ -65,7 +66,7 @@ func (service *SQSService) ApplyConfiguration(configuration interface{}) error {
 		service.Configuration = *c
 		return nil
 	}
-	return http.ErrWrongConfigurationInformed
+	return rscsrv.ErrWrongConfigurationInformed
 }
 
 // Restart stops and then starts the service again.
@@ -150,7 +151,7 @@ func (service *SQSService) RunWithSQS(handler func(client *sqs.SQS) error) error
 	if service.running {
 		return handler(service.awsSQS)
 	}
-	return http.ErrServiceNotRunning
+	return rscsrv.ErrServiceNotRunning
 }
 
 // SendMessage is a wrapper for the `sqs.SQS.SendMessage`.
@@ -159,7 +160,7 @@ func (service *SQSService) SendMessage(input *sqs.SendMessageInput) (*sqs.SendMe
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
 		return service.awsSQS.SendMessage(input)
 	}
-	return nil, http.ErrServiceNotRunning
+	return nil, rscsrv.ErrServiceNotRunning
 }
 
 // SendMessageWithContext is a wrapper for the `sqs.SQS.SendMessage`.
@@ -168,7 +169,7 @@ func (service *SQSService) SendMessageWithContext(ctx context.Context, input *sq
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
 		return service.awsSQS.SendMessageWithContext(ctx, input)
 	}
-	return nil, http.ErrServiceNotRunning
+	return nil, rscsrv.ErrServiceNotRunning
 }
 
 // SendMessageBatch is a wrapper for the `sqs.SQS.SendMessageBatch`.
@@ -177,7 +178,7 @@ func (service *SQSService) SendMessageBatch(input *sqs.SendMessageBatchInput) (*
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
 		return service.awsSQS.SendMessageBatch(input)
 	}
-	return nil, http.ErrServiceNotRunning
+	return nil, rscsrv.ErrServiceNotRunning
 }
 
 // SendMessageBatchWithContext is a wrapper for the `sqs.SQS.SendMessageBatchWithContext`.
@@ -186,7 +187,7 @@ func (service *SQSService) SendMessageBatchWithContext(ctx context.Context, inpu
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
 		return service.awsSQS.SendMessageBatchWithContext(ctx, input)
 	}
-	return nil, http.ErrServiceNotRunning
+	return nil, rscsrv.ErrServiceNotRunning
 }
 
 // ReceiveMessage is a wrapper for the `sqs.SQS.ReceiveMessage`.
@@ -195,7 +196,7 @@ func (service *SQSService) ReceiveMessage(input *sqs.ReceiveMessageInput) (*sqs.
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
 		return service.awsSQS.ReceiveMessage(input)
 	}
-	return nil, http.ErrServiceNotRunning
+	return nil, rscsrv.ErrServiceNotRunning
 }
 
 // ReceiveMessageWithContext is a wrapper for the `sqs.SQS.ReceiveMessageWithContext`.
@@ -204,7 +205,7 @@ func (service *SQSService) ReceiveMessageWithContext(ctx context.Context, input 
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
 		return service.awsSQS.ReceiveMessageWithContext(ctx, input)
 	}
-	return nil, http.ErrServiceNotRunning
+	return nil, rscsrv.ErrServiceNotRunning
 }
 
 // DeleteMessage is a wrapper for the `sqs.SQS.DeleteMessage`.
@@ -213,7 +214,7 @@ func (service *SQSService) DeleteMessage(input *sqs.DeleteMessageInput) (*sqs.De
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
 		return service.awsSQS.DeleteMessage(input)
 	}
-	return nil, http.ErrServiceNotRunning
+	return nil, rscsrv.ErrServiceNotRunning
 }
 
 // DeleteMessageWithContext is a wrapper for the `sqs.SQS.DeleteMessageWithContext`.
@@ -222,7 +223,7 @@ func (service *SQSService) DeleteMessageWithContext(ctx context.Context, input *
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
 		return service.awsSQS.DeleteMessageWithContext(ctx, input)
 	}
-	return nil, http.ErrServiceNotRunning
+	return nil, rscsrv.ErrServiceNotRunning
 }
 
 // DeleteMessageBatch is a wrapper for the `sqs.SQS.DeleteMessageBatch`.
@@ -231,7 +232,7 @@ func (service *SQSService) DeleteMessageBatch(input *sqs.DeleteMessageBatchInput
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
 		return service.awsSQS.DeleteMessageBatch(input)
 	}
-	return nil, http.ErrServiceNotRunning
+	return nil, rscsrv.ErrServiceNotRunning
 }
 
 // DeleteMessageBatchWithContext is a wrapper for the `sqs.SQS.DeleteMessageBatchWithContext`.
@@ -240,5 +241,5 @@ func (service *SQSService) DeleteMessageBatchWithContext(ctx context.Context, in
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
 		return service.awsSQS.DeleteMessageBatchWithContext(ctx, input)
 	}
-	return nil, http.ErrServiceNotRunning
+	return nil, rscsrv.ErrServiceNotRunning
 }

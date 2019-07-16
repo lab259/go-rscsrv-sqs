@@ -1,12 +1,7 @@
-version: '3'
+version: "3"
 
 services:
-
-  localstack:
-    image: localstack/localstack
+  elasticmq:
+    image: papejajr/elasticmq
     ports:
-      - "4576:4576"
-    environment:
-      SERVICES: sqs
-    volumes:
-      - "./.docker/volumes/localstack:/tmp/localstack"
+      - "9324:9324"
