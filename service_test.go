@@ -37,7 +37,7 @@ var _ = Describe("SQSService", func() {
 	It("should fail loading a configuration", func() {
 		var service SQSService
 		configuration, err := service.LoadConfiguration()
-		Expect(err).NotTo(BeNil())
+		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("not implemented"))
 		Expect(configuration).To(BeNil())
 	})
@@ -59,7 +59,7 @@ var _ = Describe("SQSService", func() {
 			QUrl:     "qurl",
 			Key:      "key",
 		})
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 		Expect(service.Configuration.Region).To(Equal("region"))
 		Expect(service.Configuration.Endpoint).To(Equal("endpoint"))
 		Expect(service.Configuration.Secret).To(Equal("secret"))
@@ -76,7 +76,7 @@ var _ = Describe("SQSService", func() {
 			QUrl:     "qurl",
 			Key:      "key",
 		})
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 		Expect(service.Configuration.Region).To(Equal("region"))
 		Expect(service.Configuration.Endpoint).To(Equal("endpoint"))
 		Expect(service.Configuration.Secret).To(Equal("secret"))
@@ -91,13 +91,13 @@ var _ = Describe("SQSService", func() {
 
 	It("should start the service", func() {
 		var service SQSService
-		Expect(service.ApplyConfiguration(&validConfiguration)).To(BeNil())
-		Expect(service.Start()).To(BeNil())
+		Expect(service.ApplyConfiguration(&validConfiguration)).To(Succeed())
+		Expect(service.Start()).To(Succeed())
 		defer service.Stop()
 		output, err := service.SendMessage(&sqs.SendMessageInput{
 			MessageBody: aws.String("this is the body of the message"),
 		})
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 		Expect(aws.StringValue(output.MessageId)).NotTo(BeEmpty())
 	})
 
@@ -105,13 +105,13 @@ var _ = Describe("SQSService", func() {
 		var service SQSService
 		v := validConfiguration
 		v.QUrl = "http://differenthost:9324/queue/queue-test"
-		Expect(service.ApplyConfiguration(&v)).To(BeNil())
-		Expect(service.Start()).To(BeNil())
+		Expect(service.ApplyConfiguration(&v)).To(Succeed())
+		Expect(service.Start()).To(Succeed())
 		defer service.Stop()
 		output, err := service.SendMessage(&sqs.SendMessageInput{
 			MessageBody: aws.String("this is the body of the message"),
 		})
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 		Expect(aws.StringValue(output.MessageId)).NotTo(BeEmpty())
 	})
 
@@ -119,7 +119,7 @@ var _ = Describe("SQSService", func() {
 		var service SQSService
 		v := validConfiguration
 		v.QUrl += "-nonexistent"
-		Expect(service.ApplyConfiguration(&v)).To(BeNil())
+		Expect(service.ApplyConfiguration(&v)).To(Succeed())
 		err := service.Start()
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("queue"))
@@ -128,9 +128,9 @@ var _ = Describe("SQSService", func() {
 
 	It("should stop the service", func() {
 		var service SQSService
-		Expect(service.ApplyConfiguration(&validConfiguration)).To(BeNil())
-		Expect(service.Start()).To(BeNil())
-		Expect(service.Stop()).To(BeNil())
+		Expect(service.ApplyConfiguration(&validConfiguration)).To(Succeed())
+		Expect(service.Start()).To(Succeed())
+		Expect(service.Stop()).To(Succeed())
 		Expect(service.RunWithSQS(func(client *sqs.SQS) error {
 			return nil
 		})).To(Equal(rscsrv.ErrServiceNotRunning))
@@ -138,13 +138,13 @@ var _ = Describe("SQSService", func() {
 
 	It("should restart the service", func() {
 		var service SQSService
-		Expect(service.ApplyConfiguration(&validConfiguration)).To(BeNil())
-		Expect(service.Start()).To(BeNil())
-		Expect(service.Restart()).To(BeNil())
+		Expect(service.ApplyConfiguration(&validConfiguration)).To(Succeed())
+		Expect(service.Start()).To(Succeed())
+		Expect(service.Restart()).To(Succeed())
 		output, err := service.SendMessage(&sqs.SendMessageInput{
 			MessageBody: aws.String("this is the body of the message"),
 		})
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 		Expect(aws.StringValue(output.MessageId)).NotTo(BeEmpty())
 	})
 
@@ -255,38 +255,38 @@ var _ = Describe("SQSService", func() {
 
 		BeforeEach(func() {
 			sqsService = &SQSService{}
-			Expect(sqsService.ApplyConfiguration(&validConfiguration)).To(BeNil())
-			Expect(sqsService.Start()).To(BeNil())
+			Expect(sqsService.ApplyConfiguration(&validConfiguration)).To(Succeed())
+			Expect(sqsService.Start()).To(Succeed())
 			for {
 				messages, err := sqsService.ReceiveMessage(&sqs.ReceiveMessageInput{
 					MaxNumberOfMessages: aws.Int64(1),
 					WaitTimeSeconds:     aws.Int64(1),
 				})
-				Expect(err).To(BeNil())
+				Expect(err).ToNot(HaveOccurred())
 				if len(messages.Messages) == 0 {
 					break
 				}
 				_, err = sqsService.DeleteMessage(&sqs.DeleteMessageInput{
 					ReceiptHandle: messages.Messages[0].ReceiptHandle,
 				})
-				Expect(err).To(BeNil())
+				Expect(err).ToNot(HaveOccurred())
 			}
 			time.Sleep(time.Millisecond * 100)
 		})
 
 		AfterEach(func() {
-			Expect(sqsService.Stop()).To(BeNil())
+			Expect(sqsService.Stop()).To(Succeed())
 		})
 
 		It("should send and receive a message", func() {
 			sendOut, err := sqsService.SendMessage(&sqs.SendMessageInput{
 				MessageBody: aws.String("testing this body"),
 			})
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			rcvOut, err := sqsService.ReceiveMessage(&sqs.ReceiveMessageInput{
 				WaitTimeSeconds: aws.Int64(1),
 			})
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(rcvOut.Messages).To(HaveLen(1))
 			Expect(aws.StringValue(sendOut.MessageId)).To(Equal(aws.StringValue(rcvOut.Messages[0].MessageId)))
 			Expect(aws.StringValue(rcvOut.Messages[0].Body)).To(Equal("testing this body"))
@@ -296,11 +296,11 @@ var _ = Describe("SQSService", func() {
 			sendOut, err := sqsService.SendMessageWithContext(context.Background(), &sqs.SendMessageInput{
 				MessageBody: aws.String("testing this body"),
 			})
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			rcvOut, err := sqsService.ReceiveMessage(&sqs.ReceiveMessageInput{
 				WaitTimeSeconds: aws.Int64(1),
 			})
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(rcvOut.Messages).To(HaveLen(1))
 			Expect(aws.StringValue(sendOut.MessageId)).To(Equal(aws.StringValue(rcvOut.Messages[0].MessageId)))
 			Expect(aws.StringValue(rcvOut.Messages[0].Body)).To(Equal("testing this body"))
@@ -310,20 +310,20 @@ var _ = Describe("SQSService", func() {
 			_, err := sqsService.SendMessage(&sqs.SendMessageInput{
 				MessageBody: aws.String("testing this body"),
 			})
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			rcvOut, err := sqsService.ReceiveMessage(&sqs.ReceiveMessageInput{
 				WaitTimeSeconds: aws.Int64(1),
 			})
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(rcvOut.Messages).To(HaveLen(1))
 			_, err = sqsService.DeleteMessage(&sqs.DeleteMessageInput{
 				ReceiptHandle: rcvOut.Messages[0].ReceiptHandle,
 			})
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			rcvOut, err = sqsService.ReceiveMessage(&sqs.ReceiveMessageInput{
 				WaitTimeSeconds: aws.Int64(0),
 			})
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(rcvOut.Messages).To(BeEmpty())
 		})
 
@@ -331,20 +331,20 @@ var _ = Describe("SQSService", func() {
 			_, err := sqsService.SendMessage(&sqs.SendMessageInput{
 				MessageBody: aws.String("testing this body"),
 			})
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			rcvOut, err := sqsService.ReceiveMessage(&sqs.ReceiveMessageInput{
 				WaitTimeSeconds: aws.Int64(1),
 			})
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(rcvOut.Messages).To(HaveLen(1))
 			_, err = sqsService.DeleteMessageWithContext(context.Background(), &sqs.DeleteMessageInput{
 				ReceiptHandle: rcvOut.Messages[0].ReceiptHandle,
 			})
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			rcvOut, err = sqsService.ReceiveMessage(&sqs.ReceiveMessageInput{
 				WaitTimeSeconds: aws.Int64(0),
 			})
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(rcvOut.Messages).To(BeEmpty())
 		})
 
@@ -361,13 +361,13 @@ var _ = Describe("SQSService", func() {
 					},
 				},
 			})
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(sendOut.Successful).To(HaveLen(2))
 			rcvOut, err := sqsService.ReceiveMessageWithContext(context.Background(), &sqs.ReceiveMessageInput{
 				WaitTimeSeconds:     aws.Int64(1),
 				MaxNumberOfMessages: aws.Int64(2),
 			})
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(rcvOut.Messages).To(HaveLen(2))
 			Expect([]string{aws.StringValue(rcvOut.Messages[0].MessageId), aws.StringValue(rcvOut.Messages[1].MessageId)}).To(ConsistOf(aws.StringValue(sendOut.Successful[1].MessageId), aws.StringValue(sendOut.Successful[0].MessageId)))
 		})
@@ -385,13 +385,13 @@ var _ = Describe("SQSService", func() {
 					},
 				},
 			})
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(sendOut.Successful).To(HaveLen(2))
 			rcvOut, err := sqsService.ReceiveMessage(&sqs.ReceiveMessageInput{
 				WaitTimeSeconds:     aws.Int64(1),
 				MaxNumberOfMessages: aws.Int64(2),
 			})
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(rcvOut.Messages).To(HaveLen(2))
 			Expect([]string{aws.StringValue(rcvOut.Messages[0].MessageId), aws.StringValue(rcvOut.Messages[1].MessageId)}).To(ConsistOf(aws.StringValue(sendOut.Successful[1].MessageId), aws.StringValue(sendOut.Successful[0].MessageId)))
 		})
@@ -409,13 +409,13 @@ var _ = Describe("SQSService", func() {
 					},
 				},
 			})
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(sendOut.Successful).To(HaveLen(2))
 			rcvOut, err := sqsService.ReceiveMessage(&sqs.ReceiveMessageInput{
 				WaitTimeSeconds:     aws.Int64(1),
 				MaxNumberOfMessages: aws.Int64(2),
 			})
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(rcvOut.Messages).To(HaveLen(2))
 			Expect([]string{aws.StringValue(rcvOut.Messages[0].MessageId), aws.StringValue(rcvOut.Messages[1].MessageId)}).To(ConsistOf(aws.StringValue(sendOut.Successful[1].MessageId), aws.StringValue(sendOut.Successful[0].MessageId)))
 
@@ -434,7 +434,7 @@ var _ = Describe("SQSService", func() {
 				WaitTimeSeconds:     aws.Int64(1),
 				MaxNumberOfMessages: aws.Int64(2),
 			})
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(rcvOut.Messages).To(BeEmpty())
 		})
 
@@ -451,13 +451,13 @@ var _ = Describe("SQSService", func() {
 					},
 				},
 			})
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(sendOut.Successful).To(HaveLen(2))
 			rcvOut, err := sqsService.ReceiveMessage(&sqs.ReceiveMessageInput{
 				WaitTimeSeconds:     aws.Int64(1),
 				MaxNumberOfMessages: aws.Int64(2),
 			})
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(rcvOut.Messages).To(HaveLen(2))
 			Expect([]string{aws.StringValue(rcvOut.Messages[0].MessageId), aws.StringValue(rcvOut.Messages[1].MessageId)}).To(ConsistOf(aws.StringValue(sendOut.Successful[1].MessageId), aws.StringValue(sendOut.Successful[0].MessageId)))
 
@@ -476,7 +476,7 @@ var _ = Describe("SQSService", func() {
 				WaitTimeSeconds:     aws.Int64(1),
 				MaxNumberOfMessages: aws.Int64(2),
 			})
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(rcvOut.Messages).To(BeEmpty())
 		})
 	})
