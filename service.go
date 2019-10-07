@@ -23,7 +23,7 @@ type SQSServiceConfiguration struct {
 	Secret   string `yaml:"secret"`
 }
 
-// CredentialsFromStruct define credentials from redigo configuration
+// CredentialsFromStruct define credentials from sqs configuration
 type CredentialsFromStruct struct {
 	credentials *SQSServiceConfiguration
 }
@@ -83,55 +83,57 @@ func (service *SQSService) Restart() error {
 	return service.Start()
 }
 
-// Start starts the redis pool.
+// Start starts the service pool.
 func (service *SQSService) Start() error {
-	conf := aws.Config{
-		Credentials: credentials.NewCredentials(NewCredentialsFromStruct(&service.Configuration)),
-	}
-
-	if service.Configuration.Endpoint != "" {
-		conf.Endpoint = aws.String(service.Configuration.Endpoint)
-	}
-
-	if service.Configuration.Region == "" {
-		conf.Region = aws.String("sa-east-1")
-	} else {
-		conf.Region = aws.String(service.Configuration.Region)
-	}
-
-	sess, err := session.NewSessionWithOptions(session.Options{
-		Config: conf,
-	})
-	if err != nil {
-		return err
-	}
-	service.awsSQS = sqs.New(sess)
-
-	confQURLParsed, err := url.Parse(service.Configuration.QUrl)
-	if err != nil {
-		return fmt.Errorf("could not parse the qurl: %s (%s)", service.Configuration.QUrl, err.Error())
-	}
-
-	listQueuesOutput, err := service.awsSQS.ListQueues(&sqs.ListQueuesInput{
-		QueueNamePrefix: aws.String(path.Base(confQURLParsed.Path)),
-	})
-	if err != nil {
-		return err
-	}
-	err = func() error {
-		for _, q := range listQueuesOutput.QueueUrls {
-			qURLParsed, err := url.Parse(aws.StringValue(q))
-			if err != nil {
-				return fmt.Errorf("could not parse the qurl: %s (%s)", aws.StringValue(q), err.Error())
-			}
-			if path.Base(qURLParsed.Path) == path.Base(confQURLParsed.Path) {
-				return nil
-			}
+	if !service.isRunning() {
+		conf := aws.Config{
+			Credentials: credentials.NewCredentials(NewCredentialsFromStruct(&service.Configuration)),
 		}
-		return fmt.Errorf("queue %s not found", service.Configuration.QUrl)
-	}()
-	if err != nil {
-		return err
+
+		if service.Configuration.Endpoint != "" {
+			conf.Endpoint = aws.String(service.Configuration.Endpoint)
+		}
+
+		if service.Configuration.Region == "" {
+			conf.Region = aws.String("sa-east-1")
+		} else {
+			conf.Region = aws.String(service.Configuration.Region)
+		}
+
+		sess, err := session.NewSessionWithOptions(session.Options{
+			Config: conf,
+		})
+		if err != nil {
+			return err
+		}
+		service.awsSQS = sqs.New(sess)
+
+		confQURLParsed, err := url.Parse(service.Configuration.QUrl)
+		if err != nil {
+			return fmt.Errorf("could not parse the qurl: %s (%s)", service.Configuration.QUrl, err.Error())
+		}
+
+		listQueuesOutput, err := service.awsSQS.ListQueues(&sqs.ListQueuesInput{
+			QueueNamePrefix: aws.String(path.Base(confQURLParsed.Path)),
+		})
+		if err != nil {
+			return err
+		}
+		err = func() error {
+			for _, q := range listQueuesOutput.QueueUrls {
+				qURLParsed, err := url.Parse(aws.StringValue(q))
+				if err != nil {
+					return fmt.Errorf("could not parse the qurl: %s (%s)", aws.StringValue(q), err.Error())
+				}
+				if path.Base(qURLParsed.Path) == path.Base(confQURLParsed.Path) {
+					return nil
+				}
+			}
+			return fmt.Errorf("queue %s not found", service.Configuration.QUrl)
+		}()
+		if err != nil {
+			return err
+		}
 	}
 
 	service.setRunning(true)

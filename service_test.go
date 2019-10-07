@@ -94,6 +94,7 @@ var _ = Describe("SQSService", func() {
 		Expect(service.ApplyConfiguration(&validConfiguration)).To(Succeed())
 		Expect(service.Start()).To(Succeed())
 		defer service.Stop()
+		Expect(service.isRunning()).To(BeTrue())
 		output, err := service.SendMessage(&sqs.SendMessageInput{
 			MessageBody: aws.String("this is the body of the message"),
 		})
