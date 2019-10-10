@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"path"
+	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -50,7 +51,8 @@ func (*CredentialsFromStruct) IsExpired() bool {
 
 // SQSService is the service which manages a service queue on the AWS.
 type SQSService struct {
-	serviceState
+	sync.RWMutex
+	started       bool
 	awsSQS        *sqs.SQS
 	Configuration SQSServiceConfiguration
 }
@@ -86,6 +88,9 @@ func (service *SQSService) Restart() error {
 // Start starts the service pool.
 func (service *SQSService) Start() error {
 	if !service.isRunning() {
+		service.Lock()
+		defer service.Unlock()
+
 		conf := aws.Config{
 			Credentials: credentials.NewCredentials(NewCredentialsFromStruct(&service.Configuration)),
 		}
@@ -134,18 +139,32 @@ func (service *SQSService) Start() error {
 		if err != nil {
 			return err
 		}
+
+		service.started = true
 	}
 
-	service.setRunning(true)
-
 	return nil
+}
+
+func (service *SQSService) isRunning() bool {
+	service.RLock()
+	defer service.RUnlock()
+	return service.started
+}
+
+func (service *SQSService) getSQS() *sqs.SQS {
+	service.RLock()
+	defer service.RUnlock()
+	return service.awsSQS
 }
 
 // Stop erases the aws client reference.
 func (service *SQSService) Stop() error {
 	if service.isRunning() {
+		service.Lock()
 		service.awsSQS = nil
-		service.setRunning(false)
+		service.started = false
+		service.Unlock()
 	}
 	return nil
 }
@@ -153,7 +172,7 @@ func (service *SQSService) Stop() error {
 // RunWithSQS runs a handler passing the reference of a `sqs.SQS` client.
 func (service *SQSService) RunWithSQS(handler func(client *sqs.SQS) error) error {
 	if service.isRunning() {
-		return handler(service.awsSQS)
+		return handler(service.getSQS())
 	}
 	return rscsrv.ErrServiceNotRunning
 }
@@ -162,7 +181,7 @@ func (service *SQSService) RunWithSQS(handler func(client *sqs.SQS) error) error
 func (service *SQSService) SendMessage(input *sqs.SendMessageInput) (*sqs.SendMessageOutput, error) {
 	if service.isRunning() {
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
-		return service.awsSQS.SendMessage(input)
+		return service.getSQS().SendMessage(input)
 	}
 	return nil, rscsrv.ErrServiceNotRunning
 }
@@ -171,7 +190,7 @@ func (service *SQSService) SendMessage(input *sqs.SendMessageInput) (*sqs.SendMe
 func (service *SQSService) SendMessageWithContext(ctx context.Context, input *sqs.SendMessageInput) (*sqs.SendMessageOutput, error) {
 	if service.isRunning() {
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
-		return service.awsSQS.SendMessageWithContext(ctx, input)
+		return service.getSQS().SendMessageWithContext(ctx, input)
 	}
 	return nil, rscsrv.ErrServiceNotRunning
 }
@@ -180,7 +199,7 @@ func (service *SQSService) SendMessageWithContext(ctx context.Context, input *sq
 func (service *SQSService) SendMessageBatch(input *sqs.SendMessageBatchInput) (*sqs.SendMessageBatchOutput, error) {
 	if service.isRunning() {
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
-		return service.awsSQS.SendMessageBatch(input)
+		return service.getSQS().SendMessageBatch(input)
 	}
 	return nil, rscsrv.ErrServiceNotRunning
 }
@@ -189,7 +208,7 @@ func (service *SQSService) SendMessageBatch(input *sqs.SendMessageBatchInput) (*
 func (service *SQSService) SendMessageBatchWithContext(ctx context.Context, input *sqs.SendMessageBatchInput) (*sqs.SendMessageBatchOutput, error) {
 	if service.isRunning() {
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
-		return service.awsSQS.SendMessageBatchWithContext(ctx, input)
+		return service.getSQS().SendMessageBatchWithContext(ctx, input)
 	}
 	return nil, rscsrv.ErrServiceNotRunning
 }
@@ -198,7 +217,7 @@ func (service *SQSService) SendMessageBatchWithContext(ctx context.Context, inpu
 func (service *SQSService) ReceiveMessage(input *sqs.ReceiveMessageInput) (*sqs.ReceiveMessageOutput, error) {
 	if service.isRunning() {
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
-		return service.awsSQS.ReceiveMessage(input)
+		return service.getSQS().ReceiveMessage(input)
 	}
 	return nil, rscsrv.ErrServiceNotRunning
 }
@@ -207,7 +226,7 @@ func (service *SQSService) ReceiveMessage(input *sqs.ReceiveMessageInput) (*sqs.
 func (service *SQSService) ReceiveMessageWithContext(ctx context.Context, input *sqs.ReceiveMessageInput) (*sqs.ReceiveMessageOutput, error) {
 	if service.isRunning() {
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
-		return service.awsSQS.ReceiveMessageWithContext(ctx, input)
+		return service.getSQS().ReceiveMessageWithContext(ctx, input)
 	}
 	return nil, rscsrv.ErrServiceNotRunning
 }
@@ -216,7 +235,7 @@ func (service *SQSService) ReceiveMessageWithContext(ctx context.Context, input 
 func (service *SQSService) DeleteMessage(input *sqs.DeleteMessageInput) (*sqs.DeleteMessageOutput, error) {
 	if service.isRunning() {
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
-		return service.awsSQS.DeleteMessage(input)
+		return service.getSQS().DeleteMessage(input)
 	}
 	return nil, rscsrv.ErrServiceNotRunning
 }
@@ -225,7 +244,7 @@ func (service *SQSService) DeleteMessage(input *sqs.DeleteMessageInput) (*sqs.De
 func (service *SQSService) DeleteMessageWithContext(ctx context.Context, input *sqs.DeleteMessageInput) (*sqs.DeleteMessageOutput, error) {
 	if service.isRunning() {
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
-		return service.awsSQS.DeleteMessageWithContext(ctx, input)
+		return service.getSQS().DeleteMessageWithContext(ctx, input)
 	}
 	return nil, rscsrv.ErrServiceNotRunning
 }
@@ -234,7 +253,7 @@ func (service *SQSService) DeleteMessageWithContext(ctx context.Context, input *
 func (service *SQSService) DeleteMessageBatch(input *sqs.DeleteMessageBatchInput) (*sqs.DeleteMessageBatchOutput, error) {
 	if service.isRunning() {
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
-		return service.awsSQS.DeleteMessageBatch(input)
+		return service.getSQS().DeleteMessageBatch(input)
 	}
 	return nil, rscsrv.ErrServiceNotRunning
 }
@@ -243,7 +262,7 @@ func (service *SQSService) DeleteMessageBatch(input *sqs.DeleteMessageBatchInput
 func (service *SQSService) DeleteMessageBatchWithContext(ctx context.Context, input *sqs.DeleteMessageBatchInput) (*sqs.DeleteMessageBatchOutput, error) {
 	if service.isRunning() {
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
-		return service.awsSQS.DeleteMessageBatchWithContext(ctx, input)
+		return service.getSQS().DeleteMessageBatchWithContext(ctx, input)
 	}
 	return nil, rscsrv.ErrServiceNotRunning
 }
