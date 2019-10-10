@@ -14,7 +14,7 @@ import (
 	rscsrv "github.com/lab259/go-rscsrv"
 )
 
-// RedigoServiceConfiguration is the configuration for the `RedigoService`
+// SQSServiceConfiguration is the configuration for the `SQS`
 type SQSServiceConfiguration struct {
 	QUrl     string `yaml:"q_url"`
 	Region   string `yaml:"region"`
@@ -23,16 +23,19 @@ type SQSServiceConfiguration struct {
 	Secret   string `yaml:"secret"`
 }
 
+// CredentialsFromStruct define credentials from sqs configuration
 type CredentialsFromStruct struct {
 	credentials *SQSServiceConfiguration
 }
 
+// NewCredentialsFromStruct is the configuration for the `SQS`
 func NewCredentialsFromStruct(credentials *SQSServiceConfiguration) *CredentialsFromStruct {
 	return &CredentialsFromStruct{
 		credentials: credentials,
 	}
 }
 
+// Retrieve return the AWS credentials
 func (c *CredentialsFromStruct) Retrieve() (credentials.Value, error) {
 	return credentials.Value{
 		AccessKeyID:     c.credentials.Key,
@@ -40,13 +43,14 @@ func (c *CredentialsFromStruct) Retrieve() (credentials.Value, error) {
 	}, nil
 }
 
+// IsExpired return if credentials is expired
 func (*CredentialsFromStruct) IsExpired() bool {
 	return false
 }
 
 // SQSService is the service which manages a service queue on the AWS.
 type SQSService struct {
-	running       bool
+	serviceState
 	awsSQS        *sqs.SQS
 	Configuration SQSServiceConfiguration
 }
@@ -71,8 +75,7 @@ func (service *SQSService) ApplyConfiguration(configuration interface{}) error {
 
 // Restart stops and then starts the service again.
 func (service *SQSService) Restart() error {
-	if service.running {
-		err := service.Stop()
+	if err := service.Stop(); err != nil {
 		if err != nil {
 			return err
 		}
@@ -80,9 +83,9 @@ func (service *SQSService) Restart() error {
 	return service.Start()
 }
 
-// Start starts the redis pool.
+// Start starts the service pool.
 func (service *SQSService) Start() error {
-	if !service.running {
+	if !service.isRunning() {
 		conf := aws.Config{
 			Credentials: credentials.NewCredentials(NewCredentialsFromStruct(&service.Configuration)),
 		}
@@ -131,24 +134,25 @@ func (service *SQSService) Start() error {
 		if err != nil {
 			return err
 		}
-
-		service.running = true
 	}
+
+	service.setRunning(true)
+
 	return nil
 }
 
 // Stop erases the aws client reference.
 func (service *SQSService) Stop() error {
-	if service.running {
+	if service.isRunning() {
 		service.awsSQS = nil
-		service.running = false
+		service.setRunning(false)
 	}
 	return nil
 }
 
 // RunWithSQS runs a handler passing the reference of a `sqs.SQS` client.
 func (service *SQSService) RunWithSQS(handler func(client *sqs.SQS) error) error {
-	if service.running {
+	if service.isRunning() {
 		return handler(service.awsSQS)
 	}
 	return rscsrv.ErrServiceNotRunning
@@ -156,7 +160,7 @@ func (service *SQSService) RunWithSQS(handler func(client *sqs.SQS) error) error
 
 // SendMessage is a wrapper for the `sqs.SQS.SendMessage`.
 func (service *SQSService) SendMessage(input *sqs.SendMessageInput) (*sqs.SendMessageOutput, error) {
-	if service.running {
+	if service.isRunning() {
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
 		return service.awsSQS.SendMessage(input)
 	}
@@ -165,7 +169,7 @@ func (service *SQSService) SendMessage(input *sqs.SendMessageInput) (*sqs.SendMe
 
 // SendMessageWithContext is a wrapper for the `sqs.SQS.SendMessage`.
 func (service *SQSService) SendMessageWithContext(ctx context.Context, input *sqs.SendMessageInput) (*sqs.SendMessageOutput, error) {
-	if service.running {
+	if service.isRunning() {
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
 		return service.awsSQS.SendMessageWithContext(ctx, input)
 	}
@@ -174,7 +178,7 @@ func (service *SQSService) SendMessageWithContext(ctx context.Context, input *sq
 
 // SendMessageBatch is a wrapper for the `sqs.SQS.SendMessageBatch`.
 func (service *SQSService) SendMessageBatch(input *sqs.SendMessageBatchInput) (*sqs.SendMessageBatchOutput, error) {
-	if service.running {
+	if service.isRunning() {
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
 		return service.awsSQS.SendMessageBatch(input)
 	}
@@ -183,7 +187,7 @@ func (service *SQSService) SendMessageBatch(input *sqs.SendMessageBatchInput) (*
 
 // SendMessageBatchWithContext is a wrapper for the `sqs.SQS.SendMessageBatchWithContext`.
 func (service *SQSService) SendMessageBatchWithContext(ctx context.Context, input *sqs.SendMessageBatchInput) (*sqs.SendMessageBatchOutput, error) {
-	if service.running {
+	if service.isRunning() {
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
 		return service.awsSQS.SendMessageBatchWithContext(ctx, input)
 	}
@@ -192,7 +196,7 @@ func (service *SQSService) SendMessageBatchWithContext(ctx context.Context, inpu
 
 // ReceiveMessage is a wrapper for the `sqs.SQS.ReceiveMessage`.
 func (service *SQSService) ReceiveMessage(input *sqs.ReceiveMessageInput) (*sqs.ReceiveMessageOutput, error) {
-	if service.running {
+	if service.isRunning() {
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
 		return service.awsSQS.ReceiveMessage(input)
 	}
@@ -201,7 +205,7 @@ func (service *SQSService) ReceiveMessage(input *sqs.ReceiveMessageInput) (*sqs.
 
 // ReceiveMessageWithContext is a wrapper for the `sqs.SQS.ReceiveMessageWithContext`.
 func (service *SQSService) ReceiveMessageWithContext(ctx context.Context, input *sqs.ReceiveMessageInput) (*sqs.ReceiveMessageOutput, error) {
-	if service.running {
+	if service.isRunning() {
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
 		return service.awsSQS.ReceiveMessageWithContext(ctx, input)
 	}
@@ -210,7 +214,7 @@ func (service *SQSService) ReceiveMessageWithContext(ctx context.Context, input 
 
 // DeleteMessage is a wrapper for the `sqs.SQS.DeleteMessage`.
 func (service *SQSService) DeleteMessage(input *sqs.DeleteMessageInput) (*sqs.DeleteMessageOutput, error) {
-	if service.running {
+	if service.isRunning() {
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
 		return service.awsSQS.DeleteMessage(input)
 	}
@@ -219,7 +223,7 @@ func (service *SQSService) DeleteMessage(input *sqs.DeleteMessageInput) (*sqs.De
 
 // DeleteMessageWithContext is a wrapper for the `sqs.SQS.DeleteMessageWithContext`.
 func (service *SQSService) DeleteMessageWithContext(ctx context.Context, input *sqs.DeleteMessageInput) (*sqs.DeleteMessageOutput, error) {
-	if service.running {
+	if service.isRunning() {
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
 		return service.awsSQS.DeleteMessageWithContext(ctx, input)
 	}
@@ -228,7 +232,7 @@ func (service *SQSService) DeleteMessageWithContext(ctx context.Context, input *
 
 // DeleteMessageBatch is a wrapper for the `sqs.SQS.DeleteMessageBatch`.
 func (service *SQSService) DeleteMessageBatch(input *sqs.DeleteMessageBatchInput) (*sqs.DeleteMessageBatchOutput, error) {
-	if service.running {
+	if service.isRunning() {
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
 		return service.awsSQS.DeleteMessageBatch(input)
 	}
@@ -237,7 +241,7 @@ func (service *SQSService) DeleteMessageBatch(input *sqs.DeleteMessageBatchInput
 
 // DeleteMessageBatchWithContext is a wrapper for the `sqs.SQS.DeleteMessageBatchWithContext`.
 func (service *SQSService) DeleteMessageBatchWithContext(ctx context.Context, input *sqs.DeleteMessageBatchInput) (*sqs.DeleteMessageBatchOutput, error) {
-	if service.running {
+	if service.isRunning() {
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
 		return service.awsSQS.DeleteMessageBatchWithContext(ctx, input)
 	}
