@@ -51,8 +51,7 @@ func (*CredentialsFromStruct) IsExpired() bool {
 
 // SQSService is the service which manages a service queue on the AWS.
 type SQSService struct {
-	sync.RWMutex
-	started       bool
+	m             sync.RWMutex
 	awsSQS        *sqs.SQS
 	Configuration SQSServiceConfiguration
 }
@@ -88,8 +87,8 @@ func (service *SQSService) Restart() error {
 // Start starts the service pool.
 func (service *SQSService) Start() error {
 	if !service.isRunning() {
-		service.Lock()
-		defer service.Unlock()
+		service.m.Lock()
+		defer service.m.Unlock()
 
 		conf := aws.Config{
 			Credentials: credentials.NewCredentials(NewCredentialsFromStruct(&service.Configuration)),
@@ -140,31 +139,29 @@ func (service *SQSService) Start() error {
 			return err
 		}
 
-		service.started = true
 	}
 
 	return nil
 }
 
 func (service *SQSService) isRunning() bool {
-	service.RLock()
-	defer service.RUnlock()
-	return service.started
+	service.m.RLock()
+	defer service.m.RUnlock()
+	return service.awsSQS != nil
 }
 
 func (service *SQSService) getSQS() *sqs.SQS {
-	service.RLock()
-	defer service.RUnlock()
+	service.m.RLock()
+	defer service.m.RUnlock()
 	return service.awsSQS
 }
 
 // Stop erases the aws client reference.
 func (service *SQSService) Stop() error {
 	if service.isRunning() {
-		service.Lock()
+		service.m.Lock()
 		service.awsSQS = nil
-		service.started = false
-		service.Unlock()
+		service.m.Unlock()
 	}
 	return nil
 }
