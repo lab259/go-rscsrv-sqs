@@ -110,14 +110,15 @@ func (service *SQSService) Start() error {
 		if err != nil {
 			return err
 		}
-		service.awsSQS = sqs.New(sess)
+
+		awsSQS := sqs.New(sess)
 
 		confQURLParsed, err := url.Parse(service.Configuration.QUrl)
 		if err != nil {
 			return fmt.Errorf("could not parse the qurl: %s (%s)", service.Configuration.QUrl, err.Error())
 		}
 
-		listQueuesOutput, err := service.awsSQS.ListQueues(&sqs.ListQueuesInput{
+		listQueuesOutput, err := awsSQS.ListQueues(&sqs.ListQueuesInput{
 			QueueNamePrefix: aws.String(path.Base(confQURLParsed.Path)),
 		})
 		if err != nil {
@@ -138,6 +139,8 @@ func (service *SQSService) Start() error {
 		if err != nil {
 			return err
 		}
+
+		service.awsSQS = awsSQS
 
 	}
 
