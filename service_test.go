@@ -102,6 +102,21 @@ var _ = Describe("SQSService", func() {
 		Expect(aws.StringValue(output.MessageId)).NotTo(BeEmpty())
 	})
 
+	It("should start the service", func() {
+		var service SQSService
+		Expect(service.ApplyConfiguration(&validConfiguration)).To(Succeed())
+		Expect(service.Start()).To(Succeed())
+		Expect(service.isRunning()).To(BeTrue())
+
+		go service.Stop()
+
+		output, err := service.SendMessage(&sqs.SendMessageInput{
+			MessageBody: aws.String("this is the body of the message"),
+		})
+		Expect(err).ToNot(HaveOccurred())
+		Expect(aws.StringValue(output.MessageId)).NotTo(BeEmpty())
+	})
+
 	It("should start the service with a different host", func() {
 		var service SQSService
 		v := validConfiguration
