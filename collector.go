@@ -3,42 +3,53 @@ package sqssrv
 import "github.com/prometheus/client_golang/prometheus"
 
 type SQSServiceCollector struct {
+
 	// prometheus counters
-	sendMessageCalls     *prometheus.CounterVec
-	sendMessageDuration  *prometheus.CounterVec
-	sendMessageSuccess   *prometheus.CounterVec
-	sendMessageFailures  *prometheus.CounterVec
+	messageCalls         *prometheus.CounterVec
+	messageDuration      *prometheus.CounterVec
+	messageSuccess       *prometheus.CounterVec
+	messageFailures      *prometheus.CounterVec
 	messageTrafficAmount *prometheus.CounterVec
 	messageTrafficSize   *prometheus.CounterVec
 }
 
-var sendMessageVectorLabels = []string{"queue", "method"}
+var (
+	messageMetricVectorLabels = []string{"queue", "method"}
+)
+
+const (
+	MessageMetricMethodSendMessage        string = "SendMessage"
+	MessageMetricMethodSendMessageBatch   string = "SendMessageBatch"
+	MessageMetricMethodDeleteMessage      string = "DeleteMessage"
+	MessageMetricMethodDeleteMessageBatch string = "DeleteMessageBatch"
+	MessageMetricMethodReceiveMessage     string = "ReceiveMessage"
+)
 
 func NewSQSServiceCollector() *SQSServiceCollector {
 	return &SQSServiceCollector{
-		sendMessageCalls: prometheus.NewCounterVec(
+		messageCalls: prometheus.NewCounterVec(
 			prometheus.CounterOpts{},
-			sendMessageVectorLabels,
+			messageMetricVectorLabels,
 		),
-		sendMessageDuration: prometheus.NewCounterVec(
+		messageDuration: prometheus.NewCounterVec(
 			prometheus.CounterOpts{},
-			sendMessageVectorLabels,
+			messageMetricVectorLabels,
 		),
-		sendMessageSuccess: prometheus.NewCounterVec(
+		messageSuccess: prometheus.NewCounterVec(
 			prometheus.CounterOpts{},
-			sendMessageVectorLabels,
+			messageMetricVectorLabels,
 		),
-		sendMessageFailures: prometheus.NewCounterVec(
+		messageFailures: prometheus.NewCounterVec(
 			prometheus.CounterOpts{},
-			sendMessageVectorLabels,
+			messageMetricVectorLabels,
 		),
 		messageTrafficAmount: prometheus.NewCounterVec(
 			prometheus.CounterOpts{},
-			[]string{"queue", "direction"},
+			messageMetricVectorLabels,
 		),
 		messageTrafficSize: prometheus.NewCounterVec(
 			prometheus.CounterOpts{},
-			[]string{"queue", "direction"},
+			messageMetricVectorLabels,
 		),
 	}
 }
@@ -48,5 +59,5 @@ func (collector *SQSServiceCollector) Describe(descs chan<- *prometheus.Desc) {
 }
 
 func (collector *SQSServiceCollector) Collect(metrics chan<- prometheus.Metric) {
-	collector.sendMessageDuration.Collect(metrics)
+	collector.messageDuration.Collect(metrics)
 }
