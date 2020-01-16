@@ -7,12 +7,14 @@ import (
 	"net/url"
 	"path"
 	"sync"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	rscsrv "github.com/lab259/go-rscsrv"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // SQSServiceConfiguration is the configuration for the `SQS`
@@ -54,6 +56,7 @@ type SQSService struct {
 	m             sync.RWMutex
 	awsSQS        *sqs.SQS
 	Configuration SQSServiceConfiguration
+	Collector     *SQSServiceCollector
 }
 
 // LoadConfiguration returns
@@ -141,7 +144,7 @@ func (service *SQSService) Start() error {
 		}
 
 		service.awsSQS = awsSQS
-
+		service.Collector = NewSQSServiceCollector()
 	}
 
 	return nil
@@ -179,9 +182,37 @@ func (service *SQSService) RunWithSQS(handler func(client *sqs.SQS) error) error
 
 // SendMessage is a wrapper for the `sqs.SQS.SendMessage`.
 func (service *SQSService) SendMessage(input *sqs.SendMessageInput) (*sqs.SendMessageOutput, error) {
+	if input.QueueUrl == nil {
+		qUrl := aws.String(service.Configuration.QUrl)
+		if qUrl == nil {
+			*qUrl = ""
+		}
+		input.QueueUrl = qUrl
+	}
+
+	metricLabels := prometheus.Labels{"queue": *input.QueueUrl, "method": "SendMessage"}
+	trafficLabels := prometheus.Labels{"queue": *input.QueueUrl, "direction": "in"}
+
+	service.Collector.sendMessageCalls.With(metricLabels).Inc()
+
 	if service.isRunning() {
-		input.QueueUrl = aws.String(service.Configuration.QUrl)
-		return service.getSQS().SendMessage(input)
+
+		start := time.Now()
+		output, err := service.getSQS().SendMessage(input)
+		service.Collector.sendMessageDuration.With(metricLabels).Add(time.Since(start).Seconds())
+
+		if err != nil {
+			service.Collector.sendMessageFailures.With(metricLabels).Inc()
+		} else {
+			service.Collector.sendMessageSuccess.With(metricLabels).Inc()
+		}
+
+		service.Collector.messageTrafficAmount.With(trafficLabels).Inc()
+		if input.MessageBody != nil {
+			service.Collector.messageTrafficSize.With(trafficLabels).Add(float64(len(*input.MessageBody)))
+		}
+
+		return output, err
 	}
 	return nil, rscsrv.ErrServiceNotRunning
 }
@@ -197,9 +228,38 @@ func (service *SQSService) SendMessageWithContext(ctx context.Context, input *sq
 
 // SendMessageBatch is a wrapper for the `sqs.SQS.SendMessageBatch`.
 func (service *SQSService) SendMessageBatch(input *sqs.SendMessageBatchInput) (*sqs.SendMessageBatchOutput, error) {
-	if service.isRunning() {
+	if input.QueueUrl == nil {
 		input.QueueUrl = aws.String(service.Configuration.QUrl)
-		return service.getSQS().SendMessageBatch(input)
+	}
+
+	metricLabels := prometheus.Labels{"queue": *input.QueueUrl, "method": "SendMessageBatch"}
+	trafficLabels := prometheus.Labels{"queue": *input.QueueUrl, "direction": "in"}
+
+	service.Collector.sendMessageCalls.With(metricLabels).Inc()
+
+	if service.isRunning() {
+
+		trafficSize := 0
+		for _, msg := range input.Entries {
+			if msg.MessageBody != nil {
+				trafficSize += len(*msg.MessageBody)
+			}
+		}
+
+		service.Collector.messageTrafficAmount.With(trafficLabels).Add(float64(len(input.Entries)))
+		service.Collector.messageTrafficSize.With(trafficLabels).Add(float64(trafficSize))
+
+		start := time.Now()
+		out, err := service.getSQS().SendMessageBatch(input)
+		service.Collector.sendMessageDuration.With(metricLabels).Add(time.Since(start).Seconds())
+
+		if err != nil {
+			service.Collector.sendMessageFailures.With(metricLabels).Inc()
+		} else {
+			service.Collector.sendMessageSuccess.With(metricLabels).Inc()
+		}
+
+		return out, err
 	}
 	return nil, rscsrv.ErrServiceNotRunning
 }
