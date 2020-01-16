@@ -375,9 +375,39 @@ func (service *SQSService) ReceiveMessage(input *sqs.ReceiveMessageInput) (*sqs.
 
 // ReceiveMessageWithContext is a wrapper for the `sqs.SQS.ReceiveMessageWithContext`.
 func (service *SQSService) ReceiveMessageWithContext(ctx context.Context, input *sqs.ReceiveMessageInput) (*sqs.ReceiveMessageOutput, error) {
+	if input.QueueUrl == nil {
+		qURL := aws.String(service.Configuration.QUrl)
+		if qURL == nil {
+			*qURL = ""
+		}
+		input.QueueUrl = qURL
+	}
+	metricLabels := prometheus.Labels{"queue": *input.QueueUrl, "method": MessageMetricMethodReceiveMessage}
+	service.Collector.messageCalls.With(metricLabels).Inc()
+
 	if service.isRunning() {
-		input.QueueUrl = aws.String(service.Configuration.QUrl)
-		return service.getSQS().ReceiveMessageWithContext(ctx, input)
+		start := time.Now()
+		output, err := service.getSQS().ReceiveMessageWithContext(ctx, input)
+		service.Collector.messageDuration.With(metricLabels).Add(time.Since(start).Seconds())
+
+		if err != nil {
+			service.Collector.messageFailures.With(metricLabels).Inc()
+		} else {
+			service.Collector.messageSuccess.With(metricLabels).Inc()
+		}
+
+		service.Collector.messageTrafficAmount.With(metricLabels).Add(float64(len(output.Messages)))
+
+		trafficSize := 0
+
+		for _, msg := range output.Messages {
+			if msg.Body != nil {
+				trafficSize += len(*msg.Body)
+			}
+		}
+		service.Collector.messageTrafficSize.With(metricLabels).Add(float64(trafficSize))
+
+		return output, err
 	}
 	return nil, rscsrv.ErrServiceNotRunning
 }
@@ -412,27 +442,108 @@ func (service *SQSService) DeleteMessage(input *sqs.DeleteMessageInput) (*sqs.De
 
 // DeleteMessageWithContext is a wrapper for the `sqs.SQS.DeleteMessageWithContext`.
 func (service *SQSService) DeleteMessageWithContext(ctx context.Context, input *sqs.DeleteMessageInput) (*sqs.DeleteMessageOutput, error) {
+	if input.QueueUrl == nil {
+		qURL := aws.String(service.Configuration.QUrl)
+		if qURL == nil {
+			*qURL = ""
+		}
+		input.QueueUrl = qURL
+	}
+	metricLabels := prometheus.Labels{"queue": *input.QueueUrl, "method": MessageMetricMethodDeleteMessage}
+	service.Collector.messageCalls.With(metricLabels).Inc()
+
 	if service.isRunning() {
-		input.QueueUrl = aws.String(service.Configuration.QUrl)
-		return service.getSQS().DeleteMessageWithContext(ctx, input)
+		start := time.Now()
+		output, err := service.getSQS().DeleteMessageWithContext(ctx, input)
+		service.Collector.messageDuration.With(metricLabels).Add(time.Since(start).Seconds())
+
+		if err != nil {
+			service.Collector.messageFailures.With(metricLabels).Inc()
+		} else {
+			service.Collector.messageSuccess.With(metricLabels).Inc()
+		}
+		service.Collector.messageTrafficAmount.With(metricLabels).Inc()
+		return output, err
 	}
 	return nil, rscsrv.ErrServiceNotRunning
 }
 
 // DeleteMessageBatch is a wrapper for the `sqs.SQS.DeleteMessageBatch`.
 func (service *SQSService) DeleteMessageBatch(input *sqs.DeleteMessageBatchInput) (*sqs.DeleteMessageBatchOutput, error) {
+	if input.QueueUrl == nil {
+		qURL := aws.String(service.Configuration.QUrl)
+		if qURL == nil {
+			*qURL = ""
+		}
+		input.QueueUrl = qURL
+	}
+
+	metricLabels := prometheus.Labels{"queue": *input.QueueUrl, "method": MessageMetricMethodDeleteMessageBatch}
+
+	service.Collector.messageCalls.With(metricLabels).Inc()
+
 	if service.isRunning() {
-		input.QueueUrl = aws.String(service.Configuration.QUrl)
-		return service.getSQS().DeleteMessageBatch(input)
+		service.Collector.messageTrafficAmount.With(metricLabels).Add(float64(len(input.Entries)))
+
+		start := time.Now()
+		out, err := service.getSQS().DeleteMessageBatch(input)
+		service.Collector.messageDuration.With(metricLabels).Add(time.Since(start).Seconds())
+
+		if err != nil {
+			service.Collector.messageFailures.With(metricLabels).Inc()
+		} else {
+			service.Collector.messageSuccess.With(metricLabels).Inc()
+		}
+
+		return out, err
 	}
 	return nil, rscsrv.ErrServiceNotRunning
 }
 
 // DeleteMessageBatchWithContext is a wrapper for the `sqs.SQS.DeleteMessageBatchWithContext`.
 func (service *SQSService) DeleteMessageBatchWithContext(ctx context.Context, input *sqs.DeleteMessageBatchInput) (*sqs.DeleteMessageBatchOutput, error) {
+	if input.QueueUrl == nil {
+		qURL := aws.String(service.Configuration.QUrl)
+		if qURL == nil {
+			*qURL = ""
+		}
+		input.QueueUrl = qURL
+	}
+
+	metricLabels := prometheus.Labels{"queue": *input.QueueUrl, "method": MessageMetricMethodDeleteMessageBatch}
+
+	service.Collector.messageCalls.With(metricLabels).Inc()
+
 	if service.isRunning() {
-		input.QueueUrl = aws.String(service.Configuration.QUrl)
-		return service.getSQS().DeleteMessageBatchWithContext(ctx, input)
+		service.Collector.messageTrafficAmount.With(metricLabels).Add(float64(len(input.Entries)))
+
+		start := time.Now()
+		out, err := service.getSQS().DeleteMessageBatchWithContext(ctx, input)
+		service.Collector.messageDuration.With(metricLabels).Add(time.Since(start).Seconds())
+
+		if err != nil {
+			service.Collector.messageFailures.With(metricLabels).Inc()
+		} else {
+			service.Collector.messageSuccess.With(metricLabels).Inc()
+		}
+
+		return out, err
+	}
+	return nil, rscsrv.ErrServiceNotRunning
+}
+
+// PurgeQueue is a wrapper for the `sqs.SQS.PurgeQueue`.
+func (service *SQSService) PurgeQueue(input *sqs.PurgeQueueInput) (*sqs.PurgeQueueOutput, error) {
+	if input.QueueUrl == nil {
+		qURL := aws.String(service.Configuration.QUrl)
+		if qURL == nil {
+			*qURL = ""
+		}
+		input.QueueUrl = qURL
+	}
+
+	if service.isRunning() {
+		return service.getSQS().PurgeQueue(input)
 	}
 	return nil, rscsrv.ErrServiceNotRunning
 }

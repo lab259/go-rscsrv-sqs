@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 	"testing"
-	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
@@ -31,6 +30,28 @@ func TestService(t *testing.T) {
 		macchiatoReporter := macchiato.NewReporter()
 		RunSpecsWithCustomReporters(t, description, []Reporter{macchiatoReporter, junitReporter})
 	}
+}
+
+var (
+	sqsService         *SQSService
+	validConfiguration = SQSServiceConfiguration{
+		Endpoint: "http://localhost:9324",
+		QUrl:     "http://localhost:9324/queue/queue-test",
+	}
+)
+
+func InitForTesting() {
+	BeforeEach(func() {
+		sqsService = &SQSService{}
+		Expect(sqsService.ApplyConfiguration(&validConfiguration)).To(Succeed())
+		Expect(sqsService.Start()).To(Succeed())
+		_, err := sqsService.PurgeQueue(&sqs.PurgeQueueInput{})
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	AfterEach(func() {
+		Expect(sqsService.Stop()).To(Succeed())
+	})
 }
 
 var _ = Describe("SQSService", func() {
@@ -83,11 +104,6 @@ var _ = Describe("SQSService", func() {
 		Expect(service.Configuration.QUrl).To(Equal("qurl"))
 		Expect(service.Configuration.Key).To(Equal("key"))
 	})
-
-	validConfiguration := SQSServiceConfiguration{
-		Endpoint: "http://localhost:9324",
-		QUrl:     "http://localhost:9324/queue/queue-test",
-	}
 
 	It("should start the service", func() {
 		var service SQSService
@@ -269,32 +285,7 @@ var _ = Describe("SQSService", func() {
 	})
 
 	Context("sending and receiving messages", func() {
-		var sqsService *SQSService
-
-		BeforeEach(func() {
-			sqsService = &SQSService{}
-			Expect(sqsService.ApplyConfiguration(&validConfiguration)).To(Succeed())
-			Expect(sqsService.Start()).To(Succeed())
-			for {
-				messages, err := sqsService.ReceiveMessage(&sqs.ReceiveMessageInput{
-					MaxNumberOfMessages: aws.Int64(1),
-					WaitTimeSeconds:     aws.Int64(1),
-				})
-				Expect(err).ToNot(HaveOccurred())
-				if len(messages.Messages) == 0 {
-					break
-				}
-				_, err = sqsService.DeleteMessage(&sqs.DeleteMessageInput{
-					ReceiptHandle: messages.Messages[0].ReceiptHandle,
-				})
-				Expect(err).ToNot(HaveOccurred())
-			}
-			time.Sleep(time.Millisecond * 100)
-		})
-
-		AfterEach(func() {
-			Expect(sqsService.Stop()).To(Succeed())
-		})
+		InitForTesting()
 
 		It("should send and receive a message", func() {
 			sendOut, err := sqsService.SendMessage(&sqs.SendMessageInput{
@@ -437,19 +428,22 @@ var _ = Describe("SQSService", func() {
 			Expect(rcvOut.Messages).To(HaveLen(2))
 			Expect([]string{aws.StringValue(rcvOut.Messages[0].MessageId), aws.StringValue(rcvOut.Messages[1].MessageId)}).To(ConsistOf(aws.StringValue(sendOut.Successful[1].MessageId), aws.StringValue(sendOut.Successful[0].MessageId)))
 
-			sqsService.DeleteMessageBatch(&sqs.DeleteMessageBatchInput{
+			_, err = sqsService.DeleteMessageBatch(&sqs.DeleteMessageBatchInput{
 				Entries: []*sqs.DeleteMessageBatchRequestEntry{
 					{
-						ReceiptHandle: sendOut.Successful[0].MessageId,
+						Id:            rcvOut.Messages[0].MessageId,
+						ReceiptHandle: rcvOut.Messages[0].ReceiptHandle,
 					},
 					{
-						ReceiptHandle: sendOut.Successful[1].MessageId,
+						Id:            rcvOut.Messages[1].MessageId,
+						ReceiptHandle: rcvOut.Messages[1].ReceiptHandle,
 					},
 				},
 			})
+			Expect(err).ToNot(HaveOccurred())
 
 			rcvOut, err = sqsService.ReceiveMessage(&sqs.ReceiveMessageInput{
-				WaitTimeSeconds:     aws.Int64(1),
+				WaitTimeSeconds:     aws.Int64(2),
 				MaxNumberOfMessages: aws.Int64(2),
 			})
 			Expect(err).ToNot(HaveOccurred())
@@ -479,16 +473,19 @@ var _ = Describe("SQSService", func() {
 			Expect(rcvOut.Messages).To(HaveLen(2))
 			Expect([]string{aws.StringValue(rcvOut.Messages[0].MessageId), aws.StringValue(rcvOut.Messages[1].MessageId)}).To(ConsistOf(aws.StringValue(sendOut.Successful[1].MessageId), aws.StringValue(sendOut.Successful[0].MessageId)))
 
-			sqsService.DeleteMessageBatchWithContext(context.Background(), &sqs.DeleteMessageBatchInput{
+			_, err = sqsService.DeleteMessageBatchWithContext(context.Background(), &sqs.DeleteMessageBatchInput{
 				Entries: []*sqs.DeleteMessageBatchRequestEntry{
 					{
-						ReceiptHandle: sendOut.Successful[0].MessageId,
+						Id:            rcvOut.Messages[0].MessageId,
+						ReceiptHandle: rcvOut.Messages[0].ReceiptHandle,
 					},
 					{
-						ReceiptHandle: sendOut.Successful[1].MessageId,
+						Id:            rcvOut.Messages[1].MessageId,
+						ReceiptHandle: rcvOut.Messages[1].ReceiptHandle,
 					},
 				},
 			})
+			Expect(err).ToNot(HaveOccurred())
 
 			rcvOut, err = sqsService.ReceiveMessage(&sqs.ReceiveMessageInput{
 				WaitTimeSeconds:     aws.Int64(1),

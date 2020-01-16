@@ -2,6 +2,8 @@ version: "3"
 
 services:
   elasticmq:
-    image: papejajr/elasticmq
+    image: softwaremill/elasticmq
     ports:
       - "9324:9324"
+    volumes:
+      - ./.docker/elasticmq/custom.conf:/opt/elasticmq.conf
