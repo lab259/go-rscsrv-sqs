@@ -19,11 +19,12 @@ import (
 
 // SQSServiceConfiguration is the configuration for the `SQS`
 type SQSServiceConfiguration struct {
-	QUrl     string `yaml:"q_url"`
-	Region   string `yaml:"region"`
-	Endpoint string `yaml:"endpoint"`
-	Key      string `yaml:"key"`
-	Secret   string `yaml:"secret"`
+	QUrl            string `yaml:"q_url"`
+	Region          string `yaml:"region"`
+	Endpoint        string `yaml:"endpoint"`
+	Key             string `yaml:"key"`
+	Secret          string `yaml:"secret"`
+	CollectorPrefix string `yaml:"collector_prefix"`
 }
 
 // CredentialsFromStruct define credentials from sqs configuration
@@ -144,7 +145,9 @@ func (service *SQSService) Start() error {
 		}
 
 		service.awsSQS = awsSQS
-		service.Collector = NewSQSServiceCollector()
+		service.Collector = NewSQSServiceCollector(&SQSServiceCollectorOpts{
+			Prefix: service.Configuration.CollectorPrefix,
+		})
 	}
 
 	return nil

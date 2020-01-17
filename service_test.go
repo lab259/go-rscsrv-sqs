@@ -182,7 +182,7 @@ var _ = Describe("SQSService", func() {
 
 	When("not running the service", func() {
 		sqsService := &SQSService{
-			Collector: NewSQSServiceCollector(),
+			Collector: NewSQSServiceCollector(&SQSServiceCollectorOpts{}),
 		}
 
 		It("should fail sending a message", func() {
