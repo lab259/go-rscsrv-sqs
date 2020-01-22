@@ -2,7 +2,7 @@ COVERDIR=$(CURDIR)/.cover
 COVERAGEFILE=$(COVERDIR)/cover.out
 
 test:
-	@ginkgo --failFast ./...
+	@go run github.com/onsi/ginkgo/ginkgo -race -failFast ./...
 
 test-watch:
 	@ginkgo watch -cover -r ./...
@@ -27,9 +27,6 @@ vet:
 
 dcup:
 	@docker-compose up -d
-	@until wget -O- http://localhost:9324/\?Action\=ListQueues >/dev/null 2>&1; do echo "ElasticMQ is unreachable - sleeping"; sleep  1; done
-	@echo "Creating SQS queues..."
-	wget -qO- http://localhost:9324\?Action\=CreateQueue\&QueueName\=queue-test
 
 dcdn:
 	@docker-compose down
