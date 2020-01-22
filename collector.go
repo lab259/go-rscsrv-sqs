@@ -40,42 +40,42 @@ func NewSQSServiceCollector(opts *SQSServiceCollectorOpts) *SQSServiceCollector 
 	return &SQSServiceCollector{
 		messageCalls: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
-				Name: fmt.Sprintf("%smessage_calls", prefix),
+				Name: fmt.Sprintf("sqs_%smessage_calls", prefix),
 				Help: "The total number of method called",
 			},
 			messageMetricVectorLabels,
 		),
 		messageDuration: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
-				Name: fmt.Sprintf("%smessage_duration", prefix),
+				Name: fmt.Sprintf("sqs_%smessage_duration", prefix),
 				Help: "The total duration (in seconds) of method called",
 			},
 			messageMetricVectorLabels,
 		),
 		messageSuccess: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
-				Name: fmt.Sprintf("%smessage_success", prefix),
+				Name: fmt.Sprintf("sqs_%smessage_success", prefix),
 				Help: "The number of methods executed with success",
 			},
 			messageMetricVectorLabels,
 		),
 		messageFailures: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
-				Name: fmt.Sprintf("%smessage_failures", prefix),
+				Name: fmt.Sprintf("sqs_%smessage_failures", prefix),
 				Help: "The number of methods executed with failures",
 			},
 			messageMetricVectorLabels,
 		),
 		messageTrafficAmount: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
-				Name: fmt.Sprintf("%smessage_traffic_amount", prefix),
+				Name: fmt.Sprintf("sqs_%smessage_traffic_amount", prefix),
 				Help: "The total number of messages trafficked",
 			},
 			messageMetricVectorLabels,
 		),
 		messageTrafficSize: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
-				Name: fmt.Sprintf("%smessage_traffic_size", prefix),
+				Name: fmt.Sprintf("sqs_%smessage_traffic_size", prefix),
 				Help: "The total size (number of characters) of messages trafficked",
 			},
 			messageMetricVectorLabels,
