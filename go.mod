@@ -3,7 +3,7 @@ module github.com/lab259/go-rscsrv-sqs
 go 1.12
 
 require (
-	github.com/aws/aws-sdk-go v1.15.84
+	github.com/aws/aws-sdk-go v1.33.0
 	github.com/jamillosantos/macchiato v0.0.0-20171220130318-3be045cc5033
 	github.com/lab259/go-rscsrv v0.2.1
 	github.com/lab259/go-rscsrv-prometheus v0.2.0
